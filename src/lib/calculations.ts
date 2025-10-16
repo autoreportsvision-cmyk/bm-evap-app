@@ -58,7 +58,7 @@ export function performCalculations(data: EvaporationData): CalculatedData {
   const caldoClarificado = {
     'Vazão (m³/h)': vazaoCaldo.toFixed(2),
     'Brix (%)': brixCaldo.toFixed(2),
-    'Temperatura (°C)': temperaturaCaldo.toFixed(2),
+    'Temperatura (°C)': temperaturaCaldo ? temperaturaCaldo.toFixed(2) : 'N/A',
     'Densidade (kg/m³)': densidadeCaldo.toFixed(2),
     summary: 'Análise dos parâmetros de entrada do caldo clarificado.'
   };

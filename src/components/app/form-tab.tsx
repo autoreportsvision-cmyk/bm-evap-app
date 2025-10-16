@@ -64,26 +64,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
     }
   };
 
-  const stringifyData = (data: EvaporationData): Record<string, any> => {
-    const stringified: Record<string, any> = {};
-    for (const key in data) {
-        const value = (data as any)[key];
-        if (typeof value === 'number' && value === 0 && (INITIAL_FORM_DATA as any)[key] === '') {
-            stringified[key] = '';
-        } else {
-            stringified[key] = value;
-        }
-    }
-    return stringified;
-  }
-
   const handleFormSubmit = () => {
-    const data = form.getValues();
-    const dataForValidation: Record<string, any> = {};
-     for (const key in data) {
-        const value = (data as any)[key];
-        dataForValidation[key] = value === '' ? '' : String(value);
-    }
     handleSubmit(onSubmit)();
   };
 
@@ -115,7 +96,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
               {errors.brixCaldo && <p className="text-destructive text-xs">{errors.brixCaldo.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="temperaturaCaldo">Temperatura Caldo (°C)</Label>
+              <Label htmlFor="temperaturaCaldo">Temperatura caldo entrada do evaporador (°C)</Label>
                <Controller
                 name="temperaturaCaldo"
                 control={control}

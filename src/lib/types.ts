@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const numberFromString = z.string().transform((val, ctx) => {
-    if (val === '') {
+    if (val === null || val === '') {
         // Permite campos vazios inicialmente, mas a validação de regra refinará isso.
         return NaN;
     }
@@ -19,7 +19,7 @@ const numberFromString = z.string().transform((val, ctx) => {
 export const formSchema = z.object({
   vazaoCaldo: numberFromString.refine(val => val > 0, { message: 'Vazão é obrigatória.' }),
   brixCaldo: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  temperaturaCaldo: numberFromString.refine(val => !isNaN(val), { message: 'Temperatura é obrigatória.' }),
+  temperaturaCaldo: numberFromString.optional(),
   pressaoVapor: numberFromString.refine(val => val > 0, { message: 'Pressão é obrigatória.' }),
   preAquecimento: z.boolean(),
   tempEntradaAquec: z.optional(numberFromString),
@@ -36,7 +36,9 @@ export const formSchema = z.object({
   areaEfeito5: numberFromString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
 }).refine(data => {
     if (data.preAquecimento) {
-        return data.tempEntradaAquec !== undefined && !isNaN(data.tempEntradaAquec) && data.tempSaidaAquec !== undefined && !isNaN(data.tempSaidaAquec);
+        const tempEntrada = data.tempEntradaAquec;
+        const tempSaida = data.tempSaidaAquec;
+        return tempEntrada !== undefined && !isNaN(tempEntrada) && tempSaida !== undefined && !isNaN(tempSaida);
     }
     return true;
 }, {
