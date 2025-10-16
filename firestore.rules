@@ -1,51 +1,60 @@
 /**
- * @file Firestore Security Rules for BM_EVAPORAÇÃO.
+ * @fileoverview Firestore Security Rules for BM_EVAPORAÇÃO application.
  *
- * @corePhilosophy This ruleset enforces a strict user-ownership model for user profiles.
- *   Only the authenticated user can read or write their own profile data. Listing all users is disallowed.
+ * Core Philosophy:
+ * This ruleset enforces role-based access control, with different permissions granted to 'admin', 'basic', and 'premium' users.
+ * A user can only read and write their own data, unless they are an 'admin'.
  *
- * @dataStructure User profiles are stored under the `/users/{userId}` path,
- *   where `{userId}` corresponds to the Firebase Authentication UID.
+ * Data Structure:
+ * All user data is stored under the /users/{userId} path, where {userId} corresponds to the user's Firebase Authentication UID.
  *
- * @keySecurityDecisions Listing all users is explicitly denied. This prevents
- *   unauthorized access to user data.
+ * Key Security Decisions:
+ * - Users can only create their own user document with their own UID.
+ * - Users cannot list all users.
+ * - Admin users have elevated privileges.
+ *
+ * Denormalization for Authorization:
+ * The 'role' field is denormalized directly onto the user document. This avoids having to query a separate collection to determine the user's role, making the rules more efficient.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to individual user documents.
-     * @path /databases/{database}/documents/users/{userId}
-     * @allow (get) Authenticated user MEC7gPjrhTcs0YNWjl2I3nByM462 can read their own profile.
-     * @allow (create) Authenticated user MEC7gPjrhTcs0YNWjl2I3nByM462 can create their own profile.
-     * @allow (update) Authenticated user MEC7gPjrhTcs0YNWjl2I3nByM462 can update their own profile.
-     * @allow (delete) Authenticated user MEC7gPjrhTcs0YNWjl2I3nByM462 can delete their own profile.
-     * @deny (get) Authenticated user User_B cannot read User_A's profile.
-     * @deny (create) Unauthenticated user cannot create any profile.
-     * @deny (update) Authenticated user User_B cannot update User_A's profile.
-     * @deny (delete) Authenticated user User_B cannot delete User_A's profile.
-     * @principle Enforces document ownership for all operations, ensuring users can only manage their own data.
+     * @description Grants access to user documents based on role.
+     * @path /users/{userId}
+     * @allow (create) - User with UID 'user_abc' can create their own document at /users/user_abc.
+     * @allow (get) - User with UID 'user_abc' can read their own document at /users/user_abc.
+     * @allow (update) - User with UID 'user_abc' can update their own document at /users/user_abc.
+     * @allow (delete) - User with UID 'user_abc' can delete their own document at /users/user_abc.
+     * @allow (get) - Admin user can read any user document.
+     * @deny (create) - User with UID 'user_abc' cannot create a document at /users/user_xyz.
+     * @deny (update) - User with UID 'user_abc' cannot update the document at /users/user_xyz.
+     * @deny (delete) - User with UID 'user_abc' cannot delete the document at /users/user_xyz.
+     * @principle Enforces user-ownership for non-admin users and allows full access for admin users.
      */
     match /users/{userId} {
-      // Helper function to check if the request is made by the owner.
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
       function isOwner(userId) {
         return request.auth.uid == userId;
       }
 
-      // Helper function to check if the request is made by an existing owner.
+      function isAdmin() {
+        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+      }
+
       function isExistingOwner(userId) {
         return isOwner(userId) && resource != null;
       }
 
-      // Read permissions:
-      allow get: if isOwner(userId);
+      allow get: if isOwner(userId) || isAdmin();
       allow list: if false;
-
-      // Write permissions:
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isExistingOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id || isAdmin();
+      allow delete: if isExistingOwner(userId) || isAdmin();
     }
   }
 }
