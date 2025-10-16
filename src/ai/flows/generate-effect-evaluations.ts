@@ -80,22 +80,29 @@ const prompt = ai.definePrompt({
 
 Resumo Geral: {{overallSummary}}
 
-Dados por Efeito (em formato JSON):
-*   **Efeito 1:** {{{effect1}}}
-*   **Efeito 2:** {{{effect2}}}
-*   **Efeito 3:** {{{effect3}}}
-*   **Efeito 4:** {{{effect4}}}
-*   **Efeito 5:** {{{effect5}}}
+Dados por Efeito:
+*   Efeito 1: {{{effect1}}}
+*   Efeito 2: {{{effect2}}}
+*   Efeito 3: {{{effect3}}}
+*   Efeito 4: {{{effect4}}}
+*   Efeito 5: {{{effect5}}}
 
 ### Sua Tarefa:
 
-Elabore uma **AVALIAÇÃO GERAL** em texto, em português, sobre o conjunto de evaporação. Sua análise deve ser consolidada e abordar os seguintes pontos de forma integrada:
+Elabore uma **AVALIAÇÃO GERAL CONCISA** em texto, em português, sobre o conjunto de evaporação. Sua análise deve ser resumida, organizada em tópicos e destacar os principais desvios encontrados. Siga o layout abaixo:
 
-1.  **Análise de Desempenho Global:** Interprete os indicadores chave (Brix final do xarope, Taxa de Evaporação média, consumo de vapor) e compare-os com os parâmetros de referência.
-2.  **Diagnóstico Técnico Consolidado:** Identifique as principais anomalias e gargalos do sistema. Por exemplo, uma baixa taxa de evaporação em múltiplos efeitos sugere um problema de incrustação generalizado. Um Brix final fora da faixa ideal (60-68%) indica um problema de controle que afeta todo o processo.
-3.  **Recomendações Estratégicas:** Sugira ações corretivas e otimizações para o sistema como um todo, priorizando os pontos mais críticos identificados.
+**1. Diagnóstico Geral:**
+*   Faça uma avaliação geral do processo em um ou dois parágrafos.
+*   Compare o Brix final do xarope com a faixa ideal (60-68%) e aponte as consequências de qualquer desvio.
 
-Seja técnico, preciso e baseie sua análise exclusivamente nos dados fornecidos, cruzando as informações dos diferentes efeitos para formar uma visão completa do processo.`,
+**2. Principais Desvios e Pontos de Atenção:**
+*   Liste em tópicos (bullet points) os 3 principais desvios encontrados, comparando os dados do processo com os parâmetros de referência (Ex: "Taxa de evaporação no Efeito 3 abaixo do ideal, sugerindo possível incrustação").
+*   Seja direto e foque apenas nos problemas mais críticos.
+
+**3. Recomendações Estratégicas:**
+*   Para cada desvio apontado, forneça uma recomendação curta e objetiva.
+
+Seja técnico, preciso e baseie sua análise exclusivamente nos dados fornecidos. O relatório final deve ser claro e fácil de ler.`,
 });
 
 const generateEffectEvaluationsFlow = ai.defineFlow(
