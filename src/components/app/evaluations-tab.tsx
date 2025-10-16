@@ -49,7 +49,8 @@ export default function EvaluationsTab() {
     setLoading(false);
 
     if (result.success && result.data) {
-      setAiEvaluations(result.data);
+      // Wrap the raw string response into the expected object structure
+      setAiEvaluations({ generalEvaluation: result.data });
       toast({
         title: "Sucesso",
         description: "Avaliação geral gerada com IA.",
