@@ -1,26 +1,29 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter, AppEvents } from '@/firebase/error-emitter';
 
 /**
  * An invisible component that listens for globally emitted 'permission-error' events.
  * It throws any received error to be caught by Next.js's global-error.tsx.
+ * It is specifically designed for Firestore permission errors and will ignore other error types.
  */
 export function FirebaseErrorListener() {
-  // Use the specific error type for the state for type safety.
-  const [error, setError] = useState<FirestorePermissionError | null>(null);
+  // Use a generic Error type for the state, but we will only throw specific instances.
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // The callback now expects a strongly-typed error, matching the event payload.
-    const handleError = (error: FirestorePermissionError) => {
-      // Set error in state to trigger a re-render.
-      setError(error);
+    // The callback now expects a payload that matches one of the event types in AppEvents.
+    const handleError = (errorPayload: AppEvents[keyof AppEvents]) => {
+      // Check if the received error is an instance of FirestorePermissionError.
+      // This ensures we only handle the specific errors this component is designed for.
+      if (errorPayload.name === 'FirestorePermissionError') {
+        // Set error in state to trigger a re-render.
+        setError(errorPayload);
+      }
     };
 
-    // The typed emitter will enforce that the callback for 'permission-error'
-    // matches the expected payload type (FirestorePermissionError).
+    // Subscribe to the 'permission-error' event.
     errorEmitter.on('permission-error', handleError);
 
     // Unsubscribe on unmount to prevent memory leaks.
@@ -30,6 +33,7 @@ export function FirebaseErrorListener() {
   }, []);
 
   // On re-render, if an error exists in state, throw it.
+  // This will be caught by Next.js's error boundary.
   if (error) {
     throw error;
   }

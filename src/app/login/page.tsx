@@ -76,18 +76,32 @@ export default function LoginPage() {
       }
       router.push('/');
     } catch (error: any) {
-      console.error(error);
+      console.error("Authentication Error Code:", error.code);
       let description = 'Ocorreu um erro desconhecido. Tente novamente.';
-      if (error.code === 'auth/email-already-in-use') {
-        description = 'Este e-mail já está em uso. Tente fazer login ou use um e-mail diferente.';
-      } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-        description = 'E-mail ou senha incorretos. Por favor, verifique suas credenciais.';
-      } else if (error.message) {
-        description = error.message;
+      
+      switch (error.code) {
+        case 'auth/email-already-in-use':
+          description = 'Este e-mail já está em uso. Tente fazer login ou use um e-mail diferente.';
+          break;
+        case 'auth/invalid-credential':
+        case 'auth/wrong-password': // Legacy
+        case 'auth/user-not-found': // Legacy
+          description = 'E-mail ou senha incorretos. Por favor, verifique suas credenciais.';
+          break;
+        case 'auth/weak-password':
+          description = 'A senha é muito fraca. Ela deve ter no mínimo 6 caracteres.';
+          break;
+        case 'auth/invalid-email':
+            description = 'O formato do e-mail é inválido.';
+            break;
+        default:
+          description = error.message || 'Ocorreu um erro desconhecido. Tente novamente.';
+          break;
       }
+      
       toast({
         variant: 'destructive',
-        title: 'Erro de autenticação',
+        title: 'Erro de Autenticação',
         description: description,
       });
     }
