@@ -103,11 +103,11 @@ As informações fornecidas pelo app são apenas de brix, área e vazão de cald
 Resumo Geral: {{overallSummary}}
 
 Dados por Efeito:
-*   Efeito 1: {{{effect1}}}
-*   Efeito 2: {{{effect2}}}
-*   Efeito 3: {{{effect3}}}
-*   Efeito 4: {{{effect4}}}
-*   Efeito 5: {{{effect5}}}
+*   Efeito 1: {{effect1}}
+*   Efeito 2: {{effect2}}
+*   Efeito 3: {{effect3}}
+*   Efeito 4: {{effect4}}
+*   Efeito 5: {{effect5}}
 
 **4. LÓGICA DE ANÁLISE:**
 *   Compare cada parâmetro recebido com sua faixa ideal.
