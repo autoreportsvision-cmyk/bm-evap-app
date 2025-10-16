@@ -1,39 +1,43 @@
+
 import { z } from 'zod';
 
-const numberFromString = z.string().transform((val, ctx) => {
-    if (val === null || val === '') {
-        // Permite campos vazios inicialmente, que podem ser opcionais.
-        return NaN;
-    }
-    const parsed = parseFloat(val.replace(',', '.'));
-    if (isNaN(parsed)) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Deve ser um número.",
-        });
-        return z.NEVER;
-    }
-    return parsed;
-});
+const numberFromStringOrNumber = z.union([
+    z.string().transform((val, ctx) => {
+        if (val === null || val.trim() === '') {
+            return NaN;
+        }
+        const parsed = parseFloat(val.replace(',', '.'));
+        if (isNaN(parsed)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Deve ser um número.",
+            });
+            return z.NEVER;
+        }
+        return parsed;
+    }),
+    z.number(),
+]).refine(val => !isNaN(val), { message: "Valor inválido." });
+
 
 export const formSchema = z.object({
-  vazaoCaldo: numberFromString.refine(val => val > 0, { message: 'Vazão é obrigatória.' }),
-  brixCaldo: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  temperaturaCaldo: numberFromString.optional(),
-  pressaoVapor: numberFromString.refine(val => !isNaN(val) && val > 0, { message: 'Pressão é obrigatória e deve ser maior que zero.' }),
+  vazaoCaldo: numberFromStringOrNumber.refine(val => val > 0, { message: 'Vazão é obrigatória.' }),
+  brixCaldo: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  temperaturaCaldo: numberFromStringOrNumber.optional(),
+  pressaoVapor: numberFromStringOrNumber.refine(val => !isNaN(val) && val > 0, { message: 'Pressão é obrigatória e deve ser maior que zero.' }),
   preAquecimento: z.boolean(),
-  tempEntradaAquec: z.optional(numberFromString),
-  tempSaidaAquec: z.optional(numberFromString),
-  brixEfeito1: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  brixEfeito2: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  brixEfeito3: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  brixEfeito4: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  brixEfeito5: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  areaEfeito1: numberFromString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
-  areaEfeito2: numberFromString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
-  areaEfeito3: numberFromString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
-  areaEfeito4: numberFromString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
-  areaEfeito5: numberFromString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  tempEntradaAquec: z.optional(numberFromStringOrNumber),
+  tempSaidaAquec: z.optional(numberFromStringOrNumber),
+  brixEfeito1: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  brixEfeito2: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  brixEfeito3: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  brixEfeito4: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  brixEfeito5: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  areaEfeito1: numberFromStringOrNumber.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  areaEfeito2: numberFromStringOrNumber.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  areaEfeito3: numberFromStringOrNumber.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  areaEfeito4: numberFromStringOrNumber.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  areaEfeito5: numberFromStringOrNumber.refine(val => val > 0, { message: 'Área é obrigatória.' }),
 }).refine(data => {
     if (data.preAquecimento) {
         const tempEntrada = data.tempEntradaAquec;

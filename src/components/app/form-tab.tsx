@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, Controller } from 'react-hook-form';
@@ -37,7 +38,17 @@ export default function FormTab({ onCalculate }: FormTabProps) {
 
   useEffect(() => {
     if (isCalculated) {
-      reset(formData);
+      // Stringify numbers to reset form with correct types
+      const stringifiedData: { [key: string]: any } = {};
+      for (const key in formData) {
+          const value = (formData as any)[key];
+          if (typeof value === 'number') {
+              stringifiedData[key] = String(value);
+          } else {
+              stringifiedData[key] = value;
+          }
+      }
+      reset(stringifiedData as EvaporationData);
     } else {
       reset(INITIAL_FORM_DATA);
     }
