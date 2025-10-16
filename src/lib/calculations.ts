@@ -2,18 +2,28 @@ import type { EvaporationData, CalculatedData } from './types';
 
 // NOTE: These are placeholder calculations. Replace with real formulas.
 export function performCalculations(data: EvaporationData): CalculatedData {
-  const { brixCaldo, vazaoCaldo, temperaturaCaldo, pressaoVapor } = data;
+  const { 
+    brixCaldo, 
+    vazaoCaldo, 
+    temperaturaCaldo, 
+    pressaoVapor,
+    brixEfeito1,
+    brixEfeito2,
+    brixEfeito3,
+    brixEfeito4,
+    brixEfeito5
+   } = data;
 
   const densidadeCaldo = (brixCaldo * 5) + 980; // Placeholder
   const consumoVaporTotal = (vazaoCaldo * (100 - temperaturaCaldo) / 540) + (pressaoVapor * 1.5) ; // Placeholder
 
   // Placeholder data for charts
   const brixEvolution = [
-    { name: 'Efeito 1', brix: brixCaldo * 1.2 },
-    { name: 'Efeito 2', brix: brixCaldo * 1.5 },
-    { name: 'Efeito 3', brix: brixCaldo * 1.9 },
-    { name: 'Efeito 4', brix: brixCaldo * 2.5 },
-    { name: 'Efeito 5', brix: brixCaldo * 3.2 },
+    { name: 'Efeito 1', brix: brixEfeito1 },
+    { name: 'Efeito 2', brix: brixEfeito2 },
+    { name: 'Efeito 3', brix: brixEfeito3 },
+    { name: 'Efeito 4', brix: brixEfeito4 },
+    { name: 'Efeito 5', brix: brixEfeito5 },
   ].map(d => ({...d, brix: parseFloat(d.brix.toFixed(1))}));
 
   const effectEfficiency = [

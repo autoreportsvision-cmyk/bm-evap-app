@@ -2,7 +2,6 @@
 
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,42 +9,31 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
+import { Calculator } from 'lucide-react';
 
 import { useAppContext } from '@/context/app-context';
 import { EvaporationData, formSchema } from '@/lib/types';
-import { INITIAL_FORM_DATA } from '@/lib/constants';
 import { performCalculations } from '@/lib/calculations';
 
 export default function FormTab() {
-  const { setFormData, setCalculatedData, setIsCalculated } = useAppContext();
+  const { formData, setFormData, setCalculatedData, setIsCalculated } = useAppContext();
 
   const form = useForm<EvaporationData>({
     resolver: zodResolver(formSchema),
-    defaultValues: INITIAL_FORM_DATA,
-    mode: 'onChange',
+    defaultValues: formData,
+    mode: 'onBlur',
   });
 
-  const { watch, control, formState: { errors } } = form;
+  const { control, handleSubmit, watch, formState: { errors } } = form;
 
-  const watchedValues = watch();
   const preAquecimento = watch('preAquecimento');
   
-  useEffect(() => {
-    const subscription = watch((value, { name, type }) => {
-      if (type === 'change') {
-        const parsedData = formSchema.safeParse(value);
-        if (parsedData.success) {
-          setFormData(parsedData.data);
-          const results = performCalculations(parsedData.data);
-          setCalculatedData(results);
-          setIsCalculated(true);
-        } else {
-          setIsCalculated(false);
-        }
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [watch, setFormData, setCalculatedData, setIsCalculated]);
+  const onSubmit = (data: EvaporationData) => {
+    setFormData(data);
+    const results = performCalculations(data);
+    setCalculatedData(results);
+    setIsCalculated(true);
+  };
 
   return (
     <Card>
@@ -54,14 +42,14 @@ export default function FormTab() {
         <CardDescription>Insira os dados do processo para calcular o desempenho da evaporação.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="vazaoCaldo">Vazão Caldo (m³/h)</Label>
               <Controller
                 name="vazaoCaldo"
                 control={control}
-                render={({ field }) => <Input id="vazaoCaldo" type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />}
+                render={({ field }) => <Input id="vazaoCaldo" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
               />
               {errors.vazaoCaldo && <p className="text-destructive text-xs">{errors.vazaoCaldo.message}</p>}
             </div>
@@ -70,7 +58,7 @@ export default function FormTab() {
                <Controller
                 name="brixCaldo"
                 control={control}
-                render={({ field }) => <Input id="brixCaldo" type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />}
+                render={({ field }) => <Input id="brixCaldo" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
               />
               {errors.brixCaldo && <p className="text-destructive text-xs">{errors.brixCaldo.message}</p>}
             </div>
@@ -79,7 +67,7 @@ export default function FormTab() {
                <Controller
                 name="temperaturaCaldo"
                 control={control}
-                render={({ field }) => <Input id="temperaturaCaldo" type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />}
+                render={({ field }) => <Input id="temperaturaCaldo" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
               />
               {errors.temperaturaCaldo && <p className="text-destructive text-xs">{errors.temperaturaCaldo.message}</p>}
             </div>
@@ -88,7 +76,7 @@ export default function FormTab() {
                <Controller
                 name="pressaoVapor"
                 control={control}
-                render={({ field }) => <Input id="pressaoVapor" type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />}
+                render={({ field }) => <Input id="pressaoVapor" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
               />
               {errors.pressaoVapor && <p className="text-destructive text-xs">{errors.pressaoVapor.message}</p>}
             </div>
@@ -116,7 +104,7 @@ export default function FormTab() {
                         <Controller
                             name="tempEntradaAquec"
                             control={control}
-                            render={({ field }) => <Input id="tempEntradaAquec" type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />}
+                            render={({ field }) => <Input id="tempEntradaAquec" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
                         />
                          {errors.tempEntradaAquec && <p className="text-destructive text-xs">{errors.tempEntradaAquec.message}</p>}
                     </div>
@@ -125,7 +113,7 @@ export default function FormTab() {
                         <Controller
                             name="tempSaidaAquec"
                             control={control}
-                            render={({ field }) => <Input id="tempSaidaAquec" type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value) || 0)} />}
+                            render={({ field }) => <Input id="tempSaidaAquec" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
                         />
                          {errors.tempSaidaAquec && <p className="text-destructive text-xs">{errors.tempSaidaAquec.message}</p>}
                     </div>
@@ -134,19 +122,65 @@ export default function FormTab() {
           </div>
           
           <Separator />
-          
+
           <div className="space-y-4">
-            <h3 className="text-lg font-medium">Resultados Calculados</h3>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <h3 className="text-lg font-medium">Brix por Efeito (%)</h3>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="space-y-2">
-                    <Label>Densidade do Caldo (kg/m³)</Label>
-                    <Input value={performCalculations(watchedValues).densidadeCaldo.toFixed(2)} readOnly className="font-semibold" />
+                    <Label htmlFor="brixEfeito1">Efeito 1</Label>
+                    <Controller
+                        name="brixEfeito1"
+                        control={control}
+                        render={({ field }) => <Input id="brixEfeito1" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
+                    />
+                    {errors.brixEfeito1 && <p className="text-destructive text-xs">{errors.brixEfeito1.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="brixEfeito2">Efeito 2</Label>
+                    <Controller
+                        name="brixEfeito2"
+                        control={control}
+                        render={({ field }) => <Input id="brixEfeito2" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
+                    />
+                    {errors.brixEfeito2 && <p className="text-destructive text-xs">{errors.brixEfeito2.message}</p>}
                 </div>
                  <div className="space-y-2">
-                    <Label>Consumo de Vapor Total (t/h)</Label>
-                    <Input value={performCalculations(watchedValues).consumoVaporTotal.toFixed(2)} readOnly className="font-semibold" />
+                    <Label htmlFor="brixEfeito3">Efeito 3</Label>
+                    <Controller
+                        name="brixEfeito3"
+                        control={control}
+                        render={({ field }) => <Input id="brixEfeito3" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
+                    />
+                    {errors.brixEfeito3 && <p className="text-destructive text-xs">{errors.brixEfeito3.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="brixEfeito4">Efeito 4</Label>
+                    <Controller
+                        name="brixEfeito4"
+                        control={control}
+                        render={({ field }) => <Input id="brixEfeito4" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
+                    />
+                    {errors.brixEfeito4 && <p className="text-destructive text-xs">{errors.brixEfeito4.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="brixEfeito5">Efeito 5</Label>
+                    <Controller
+                        name="brixEfeito5"
+                        control={control}
+                        render={({ field }) => <Input id="brixEfeito5" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
+                    />
+                    {errors.brixEfeito5 && <p className="text-destructive text-xs">{errors.brixEfeito5.message}</p>}
                 </div>
              </div>
+          </div>
+          
+          <Separator />
+          
+          <div className="flex justify-end">
+            <Button type="submit">
+                <Calculator className="mr-2 h-4 w-4" />
+                Calcular
+            </Button>
           </div>
 
         </form>

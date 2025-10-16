@@ -8,6 +8,11 @@ export const formSchema = z.object({
   preAquecimento: z.boolean(),
   tempEntradaAquec: z.number().optional(),
   tempSaidaAquec: z.number().optional(),
+  brixEfeito1: z.number({ required_error: 'Brix é obrigatório.' }).min(0, 'Brix não pode ser negativo.'),
+  brixEfeito2: z.number({ required_error: 'Brix é obrigatório.' }).min(0, 'Brix não pode ser negativo.'),
+  brixEfeito3: z.number({ required_error: 'Brix é obrigatório.' }).min(0, 'Brix não pode ser negativo.'),
+  brixEfeito4: z.number({ required_error: 'Brix é obrigatório.' }).min(0, 'Brix não pode ser negativo.'),
+  brixEfeito5: z.number({ required_error: 'Brix é obrigatório.' }).min(0, 'Brix não pode ser negativo.'),
 }).refine(data => {
     if (data.preAquecimento) {
         return data.tempEntradaAquec !== undefined && data.tempSaidaAquec !== undefined;
