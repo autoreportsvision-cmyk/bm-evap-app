@@ -7,7 +7,7 @@ import { chat } from '@/ai/flows/chat-flow';
 import type { ChatInput } from '@/lib/types';
 
 
-export async function getAiEvaluations(input: GenerateEffectEvaluationsInput & { prompt: string }): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
+export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
   try {
     const evaluations = await generateEffectEvaluations(input);
     return { success: true, data: evaluations };
