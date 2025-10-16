@@ -29,23 +29,23 @@ export function performCalculations(data: EvaporationData): CalculatedData {
   const vazaoMassaCaldo = vazaoCaldo * densidadeCaldo / 1000; // t/h
 
   const vazoesSaida: number[] = [];
+  const evaporationRates: number[] = [];
   let vazaoEntradaAtual = vazaoMassaCaldo;
+  
   for (let i = 0; i < 5; i++) {
     const brixIn = brixValues[i];
     const brixOut = brixValues[i+1];
+    
+    // Vazão de saída (suco/xarope) do efeito atual
     const vazaoSaida = vazaoEntradaAtual * (brixIn / brixOut);
     vazoesSaida.push(vazaoSaida);
-    vazaoEntradaAtual = vazaoSaida;
-  }
-  
-  const evaporationRates: number[] = [];
-  vazaoEntradaAtual = vazaoMassaCaldo;
-  for (let i = 0; i < 5; i++) {
-    const brixIn = brixValues[i];
-    const brixOut = brixValues[i+1];
-    const rate = vazaoEntradaAtual * (1 - (brixIn / brixOut));
+    
+    // Taxa de evaporação é a diferença entre o que entra e o que sai
+    const rate = vazaoEntradaAtual - vazaoSaida;
     evaporationRates.push(rate);
-    vazaoEntradaAtual = vazaoEntradaAtual - rate;
+    
+    // A vazão de saída de um efeito é a vazão de entrada do próximo
+    vazaoEntradaAtual = vazaoSaida;
   }
 
 
@@ -72,7 +72,8 @@ export function performCalculations(data: EvaporationData): CalculatedData {
 
   const vaporGeneration = brixEvolution.map((item, index) => ({
       name: item.name,
-      generation: (vazaoCaldo / (index + 1.5)) * 0.3
+      // O vapor gerado é a própria taxa de evaporação do efeito
+      generation: evaporationRates[index]
   })).map(d => ({...d, generation: parseFloat(d.generation.toFixed(1))}));
 
   const areas = [areaEfeito1, areaEfeito2, areaEfeito3, areaEfeito4, areaEfeito5];
