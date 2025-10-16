@@ -2,19 +2,38 @@
 
 import Logo from '@/components/app/logo';
 import { Button } from '@/components/ui/button';
-import { useAuth, useUser } from '@/firebase';
-import { LogOut } from 'lucide-react';
+import { useAuth, useUser, useFirestore } from '@/firebase';
+import { LogOut, Gem } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useMemoFirebase } from '@/firebase/provider';
+import { doc } from 'firebase/firestore';
+import { useDoc } from '@/firebase/firestore/use-doc';
+import type { UserProfile } from '@/lib/types';
+
 
 export default function AppHeader() {
   const { user } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const handleLogout = async () => {
     await auth.signOut();
     router.push('/login');
   };
+
+  const handleGoToPricing = () => {
+    // Futuramente, redirecionar para a página de planos/preços
+    // router.push('/pricing');
+    alert('Página de planos em construção!');
+  }
 
   return (
     <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
@@ -29,6 +48,12 @@ export default function AppHeader() {
           <span className="text-sm text-muted-foreground hidden sm:inline">
             Olá {user.displayName}, seja bem vindo ao novo conceito de aprendizagem.
           </span>
+          {userProfile?.role === 'basic' && (
+            <Button variant="outline" size="sm" onClick={handleGoToPricing}>
+                <Gem className="mr-2 h-4 w-4 text-yellow-500" />
+                Seja Premium
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             Sair

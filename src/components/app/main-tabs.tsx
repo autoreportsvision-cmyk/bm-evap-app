@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, LayoutDashboard, Bot, FileSignature, Shield, Lock } from 'lucide-react';
+import { FileText, LayoutDashboard, Bot, FileSignature, Shield, Lock, Gem } from 'lucide-react';
 import FormTab from './form-tab';
 import DashboardTab from './dashboard-tab';
 import SummaryTab from './summary-tab';
@@ -44,11 +43,13 @@ export default function MainTabs() {
           Dashboard
         </TabsTrigger>
         <TabsTrigger value="summary" disabled={!isPremium}>
-          {isPremium ? <FileText className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
+          {!isPremium && <Lock className="mr-2 h-4 w-4" />}
+          {isPremium && <FileText className="mr-2 h-4 w-4" />}
           Resumo
         </TabsTrigger>
         <TabsTrigger value="evaluations" disabled={!isPremium}>
-          {isPremium ? <Bot className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
+          {!isPremium && <Lock className="mr-2 h-4 w-4" />}
+          {isPremium && <Bot className="mr-2 h-4 w-4" />}
           Avaliações (IA)
         </TabsTrigger>
         {isAdmin && (
