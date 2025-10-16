@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, LayoutDashboard, Bot, FileSignature } from 'lucide-react';
 import FormTab from './form-tab';
@@ -8,8 +9,10 @@ import SummaryTab from './summary-tab';
 import EvaluationsTab from './evaluations-tab';
 
 export default function MainTabs() {
+  const [activeTab, setActiveTab] = useState('form');
+
   return (
-    <Tabs defaultValue="form" className="w-full">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="form">
           <FileSignature className="mr-2 h-4 w-4" />
@@ -29,7 +32,7 @@ export default function MainTabs() {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="form">
-        <FormTab />
+        <FormTab onCalculate={() => setActiveTab('dashboard')} />
       </TabsContent>
       <TabsContent value="dashboard">
         <DashboardTab />
