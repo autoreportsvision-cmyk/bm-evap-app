@@ -4,8 +4,8 @@ import type { EvaporationData, CalculatedData, EffectSummaryData } from './types
 // NOTE: These are placeholder calculations. Replace with real formulas.
 export function performCalculations(data: EvaporationData): CalculatedData {
   const { 
-    brixCaldo, 
     vazaoCaldo, 
+    brixCaldo, 
     temperaturaCaldo, 
     pressaoVapor,
     brixEfeito1,
@@ -83,7 +83,7 @@ export function performCalculations(data: EvaporationData): CalculatedData {
     effect5: { brix: brixEvolution[4].brix, eficiencia: effectEfficiency[4].efficiency, taxa_evaporacao: evaporationRate[4].rate, area: areaEfeito5, kg_vapor_m2: kgVaporPorM2[4].value },
   };
 
-  const overallSummary = `Processo de evaporação operando com vazão de ${vazaoCaldo} m³/h e brix inicial de ${brixCaldo}%. O consumo total de vapor é ${consumoVaporTotal.toFixed(2)} t/h.`;
+  const overallSummary = `Processo de evaporação operando com vazão de ${vazaoCaldo} m³/h e brix inicial de ${brixCaldo}%. O consumo de vapor para elevar a temperatura do caldo à de ebulição é de ${consumoVaporTotal.toFixed(2)} t/h.`;
 
   const effectsSummary: EffectSummaryData[] = brixEvolution.map((effect, index) => {
     const brixIn = brixValues[index];
