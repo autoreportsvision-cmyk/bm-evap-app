@@ -76,7 +76,7 @@ export default function PricingPage() {
         <CardContent className="space-y-6">
             <div className="space-y-2 text-center">
                 <p className="text-4xl font-bold">R$ 49,90</p>
-                <p className="text-xs text-muted-foreground">Pagamento único. Acesso vitalício.</p>
+                <p className="text-xs text-muted-foreground">Pagamento único. Acesso anual.</p>
             </div>
             <ul className="space-y-3 text-sm">
                 <li className="flex items-center gap-2">
