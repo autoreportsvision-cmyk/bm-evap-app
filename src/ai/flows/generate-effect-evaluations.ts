@@ -41,31 +41,24 @@ export async function generateEffectEvaluations(
   input: GenerateEffectEvaluationsInput
 ): Promise<GenerateEffectEvaluationsOutput> {
   const currentDate = new Date().toLocaleString('pt-BR');
-  return generateEffectEvaluationsFlow({...input, currentDate});
-}
+  const fullInput = { ...input, currentDate };
 
-const generateEffectEvaluationsFlow = ai.defineFlow(
-  {
-    name: 'generateEffectEvaluationsFlow',
-    inputSchema: GenerateEffectEvaluationsInputSchema.extend({ currentDate: z.string() }),
-    // Output is a raw string, so no schema is needed.
-  },
-  async input => {
-
-    const promptWithData = input.prompt
-        .replace(/\$\{input.currentDate\}/g, input.currentDate)
-        .replace(/\$\{input.overallSummary\}/g, input.overallSummary)
-        .replace(/\$\{JSON.stringify\(input.effect1\)\}/g, JSON.stringify(input.effect1))
-        .replace(/\$\{JSON.stringify\(input.effect2\)\}/g, JSON.stringify(input.effect2))
-        .replace(/\$\{JSON.stringify\(input.effect3\)\}/g, JSON.stringify(input.effect3))
-        .replace(/\$\{JSON.stringify\(input.effect4\)\}/g, JSON.stringify(input.effect4))
-        .replace(/\$\{JSON.stringify\(input.effect5\)\}/g, JSON.stringify(input.effect5));
-
-    const result = await ai.generate({
-      prompt: promptWithData,
+  // This is a workaround since we can't directly use a dynamic prompt string
+  // with defineFlow that also needs structured input for templating.
+  // We'll construct the prompt manually and then call the AI.
+  const promptText = input.prompt
+    .replace(/\$\{input.currentDate\}/g, fullInput.currentDate)
+    .replace(/\$\{input.overallSummary\}/g, fullInput.overallSummary)
+    .replace(/\$\{JSON.stringify\(input.effect1\)\}/g, JSON.stringify(fullInput.effect1, null, 2))
+    .replace(/\$\{JSON.stringify\(input.effect2\)\}/g, JSON.stringify(fullInput.effect2, null, 2))
+    .replace(/\$\{JSON.stringify\(input.effect3\)\}/g, JSON.stringify(fullInput.effect3, null, 2))
+    .replace(/\$\{JSON.stringify\(input.effect4\)\}/g, JSON.stringify(fullInput.effect4, null, 2))
+    .replace(/\$\{JSON.stringify\(input.effect5\)\}/g, JSON.stringify(fullInput.effect5, null, 2));
+  
+  const result = await ai.generate({
+      prompt: promptText,
       model: 'googleai/gemini-2.5-flash',
-    });
+  });
 
-    return result.text;
-  }
-);
+  return result.text;
+}
