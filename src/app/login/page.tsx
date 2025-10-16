@@ -77,10 +77,18 @@ export default function LoginPage() {
       router.push('/');
     } catch (error: any) {
       console.error(error);
+      let description = 'Ocorreu um erro desconhecido. Tente novamente.';
+      if (error.code === 'auth/email-already-in-use') {
+        description = 'Este e-mail já está em uso. Tente fazer login ou use um e-mail diferente.';
+      } else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        description = 'E-mail ou senha incorretos. Por favor, verifique suas credenciais.';
+      } else if (error.message) {
+        description = error.message;
+      }
       toast({
         variant: 'destructive',
         title: 'Erro de autenticação',
-        description: error.message,
+        description: description,
       });
     }
   };
