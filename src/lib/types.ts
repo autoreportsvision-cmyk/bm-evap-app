@@ -16,9 +16,7 @@ const numberFromString = z.string().transform((val, ctx) => {
     return parsed;
 });
 
-// This will handle string, number, and empty string (by transforming to NaN and then being caught by refine)
 const numberFromStringOrNumber = z.union([
-    numberFromString,
     z.number(),
     z.string().refine(s => s.trim() !== '', { message: "Campo obrigatório." }).transform(val => parseFloat(val.replace(',', '.')))
 ]).refine(val => !isNaN(val), { message: "Valor inválido." });
@@ -37,7 +35,7 @@ export const formSchema = z.object({
   vazaoCaldo: numberFromStringOrNumber.refine(val => val > 0, { message: 'Vazão é obrigatória.' }),
   brixCaldo: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
   temperaturaCaldo: optionalNumberFromString,
-  pressaoVapor: numberFromStringOrNumber.refine(val => !isNaN(val) && val > 0, { message: 'Pressão é obrigatória e deve ser maior que zero.' }),
+  pressaoVapor: numberFromStringOrNumber.refine(val => !isNaN(val), { message: 'Pressão é obrigatória.' }),
   preAquecimento: z.boolean(),
   tempEntradaAquec: optionalNumberFromString,
   tempSaidaAquec: optionalNumberFromString,
@@ -100,9 +98,5 @@ export type CalculatedData = {
 };
 
 export type AIEvaluations = {
-  effect1Evaluation: string;
-  effect2Evaluation: string;
-  effect3Evaluation: string;
-  effect4Evaluation: string;
-  effect5Evaluation: string;
+  generalEvaluation: string;
 };

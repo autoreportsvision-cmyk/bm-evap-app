@@ -1,7 +1,8 @@
+
 'use server';
 
 /**
- * @fileOverview Generates detailed text evaluations for each of the 5 evaporation effects.
+ * @fileOverview Generates a detailed text evaluation for the entire evaporation process.
  *
  * - generateEffectEvaluations - A function that generates the effect evaluations.
  * - GenerateEffectEvaluationsInput - The input type for the generateEffectEvaluations function.
@@ -20,11 +21,11 @@ const EffectDataSchema = z.object({
 });
 
 const GenerateEffectEvaluationsInputSchema = z.object({
-  effect1: z.string().transform(str => JSON.parse(str)).pipe(EffectDataSchema),
-  effect2: z.string().transform(str => JSON.parse(str)).pipe(EffectDataSchema),
-  effect3: z.string().transform(str => JSON.parse(str)).pipe(EffectDataSchema),
-  effect4: z.string().transform(str => JSON.parse(str)).pipe(EffectDataSchema),
-  effect5: z.string().transform(str => JSON.parse(str)).pipe(EffectDataSchema),
+  effect1: EffectDataSchema,
+  effect2: EffectDataSchema,
+  effect3: EffectDataSchema,
+  effect4: EffectDataSchema,
+  effect5: EffectDataSchema,
   overallSummary: z.string().describe('Overall summary of the evaporation process'),
 });
 export type GenerateEffectEvaluationsInput = z.infer<
@@ -32,21 +33,9 @@ export type GenerateEffectEvaluationsInput = z.infer<
 >;
 
 const GenerateEffectEvaluationsOutputSchema = z.object({
-  effect1Evaluation: z
+  generalEvaluation: z
     .string()
-    .describe('Detailed text evaluation for effect 1'),
-  effect2Evaluation: z
-    .string()
-    .describe('Detailed text evaluation for effect 2'),
-  effect3Evaluation: z
-    .string()
-    .describe('Detailed text evaluation for effect 3'),
-  effect4Evaluation: z
-    .string()
-    .describe('Detailed text evaluation for effect 4'),
-  effect5Evaluation: z
-    .string()
-    .describe('Detailed text evaluation for effect 5'),
+    .describe('Detailed general text evaluation for the entire evaporation process'),
 });
 export type GenerateEffectEvaluationsOutput = z.infer<
   typeof GenerateEffectEvaluationsOutputSchema
@@ -62,7 +51,7 @@ const prompt = ai.definePrompt({
   name: 'generateEffectEvaluationsPrompt',
   input: {schema: GenerateEffectEvaluationsInputSchema},
   output: {schema: GenerateEffectEvaluationsOutputSchema},
-  prompt: `Você é um engenheiro especialista em processos industriais, com profundo conhecimento em balanço de massa e energia na produção de açúcar e álcool, baseado no "Manual de Produção Açucareira". Sua tarefa é analisar os dados de um sistema de evaporação de múltiplos efeitos e fornecer um diagnóstico técnico detalhado para cada efeito, baseado estritamente nos dados fornecidos e nos parâmetros de referência.
+  prompt: `Você é um engenheiro especialista em processos industriais, com profundo conhecimento em balanço de massa e energia na produção de açúcar e álcool, baseado no "Manual de Produção Açucareira". Sua tarefa é analisar os dados de um sistema de evaporação de múltiplos efeitos e fornecer um DIAGNÓSTICO GERAL E CONSOLIDADO do processo, baseado estritamente nos dados fornecidos e nos parâmetros de referência.
 
 ### Parâmetros de Referência para a Análise:
 
@@ -100,13 +89,13 @@ Dados por Efeito (em formato JSON):
 
 ### Sua Tarefa:
 
-Para cada um dos 5 efeitos, elabore uma avaliação em texto, em português, abordando os seguintes pontos:
+Elabore uma **AVALIAÇÃO GERAL** em texto, em português, sobre o conjunto de evaporação. Sua análise deve ser consolidada e abordar os seguintes pontos de forma integrada:
 
-1.  **Análise de Desempenho:** Interprete os indicadores calculados para o efeito (Brix Saída, Vapor Gerado, Taxa Evaporação, Eficiência) e compare-os com os parâmetros de referência e a tabela de pressão/temperatura.
-2.  **Diagnóstico Técnico:** Com base na comparação, identifique anomalias. Por exemplo, uma taxa de evaporação baixa pode indicar incrustações. Um Brix de saída do último efeito fora da faixa ideal (60-68%) indica um problema a ser corrigido.
-3.  **Recomendações:** Sugira ações corretivas e otimizações claras e objetivas para melhorar a eficiência e estabilidade do efeito analisado.
+1.  **Análise de Desempenho Global:** Interprete os indicadores chave (Brix final do xarope, Taxa de Evaporação média, consumo de vapor) e compare-os com os parâmetros de referência.
+2.  **Diagnóstico Técnico Consolidado:** Identifique as principais anomalias e gargalos do sistema. Por exemplo, uma baixa taxa de evaporação em múltiplos efeitos sugere um problema de incrustação generalizado. Um Brix final fora da faixa ideal (60-68%) indica um problema de controle que afeta todo o processo.
+3.  **Recomendações Estratégicas:** Sugira ações corretivas e otimizações para o sistema como um todo, priorizando os pontos mais críticos identificados.
 
-Seja técnico, preciso e baseie sua análise exclusivamente nos dados fornecidos.`,
+Seja técnico, preciso e baseie sua análise exclusivamente nos dados fornecidos, cruzando as informações dos diferentes efeitos para formar uma visão completa do processo.`,
 });
 
 const generateEffectEvaluationsFlow = ai.defineFlow(

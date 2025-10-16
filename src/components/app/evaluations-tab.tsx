@@ -1,7 +1,7 @@
+
 'use client';
 
 import { useState } from 'react';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/context/app-context';
@@ -9,6 +9,7 @@ import { Bot, Loader, Share2 } from 'lucide-react';
 import { getAiEvaluations, getSharedEvaluation } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import WhatsAppIcon from '@/components/icons/whatsapp-icon';
+import { Textarea } from '../ui/textarea';
 
 export default function EvaluationsTab() {
   const { calculatedData, aiEvaluations, setAiEvaluations, isCalculated } = useAppContext();
@@ -28,18 +29,18 @@ export default function EvaluationsTab() {
     setLoading(true);
 
     const effectsPayload = calculatedData.effectsSummary.reduce((acc, effect, index) => {
-        const effectKey = `effect${index + 1}`;
-        const effectData = {
+        const effectKey = `effect${index + 1}` as keyof typeof acc;
+        acc[effectKey] = {
             "Brix Entrada (%)": effect.brixIn,
             "Brix Saída (%)": effect.brixOut,
             "Vapor Gerado (t/h)": effect.vaporGerado,
             "Taxa Evaporação (t/h)": effect.taxaEvaporacao,
             "Eficiência (%)": effect.eficiencia,
         };
-        // The prompt expects a string representation of the object.
-        acc[effectKey] = JSON.stringify(effectData, null, 2);
         return acc;
-    }, {} as Record<string, any>);
+    }, {} as {
+        effect1: any, effect2: any, effect3: any, effect4: any, effect5: any
+    });
 
 
     const result = await getAiEvaluations({
@@ -52,7 +53,7 @@ export default function EvaluationsTab() {
       setAiEvaluations(result.data);
       toast({
         title: "Sucesso",
-        description: "Avaliações geradas com IA.",
+        description: "Avaliação geral gerada com IA.",
       });
     } else {
       toast({
@@ -88,21 +89,15 @@ export default function EvaluationsTab() {
     }
   }
 
-  const evaluationItems = aiEvaluations ? [
-    { title: 'Efeito 1', content: aiEvaluations.effect1Evaluation },
-    { title: 'Efeito 2', content: aiEvaluations.effect2Evaluation },
-    { title: 'Efeito 3', content: aiEvaluations.effect3Evaluation },
-    { title: 'Efeito 4', content: aiEvaluations.effect4Evaluation },
-    { title: 'Efeito 5', content: aiEvaluations.effect5Evaluation },
-  ] : [];
+  const generalEvaluation = aiEvaluations?.generalEvaluation;
 
   return (
     <Card>
       <CardHeader>
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-                <CardTitle>Avaliações dos Efeitos (IA)</CardTitle>
-                <CardDescription>Análise detalhada do desempenho de cada efeito gerada por IA.</CardDescription>
+                <CardTitle>Avaliação Geral do Processo (IA)</CardTitle>
+                <CardDescription>Análise consolidada do desempenho do sistema de evaporação gerada por IA.</CardDescription>
             </div>
             <div className="flex flex-shrink-0 gap-2">
                  <Button onClick={handleShareCombined} disabled={!isCalculated || shareLoading}>
@@ -111,7 +106,7 @@ export default function EvaluationsTab() {
                 </Button>
                 <Button onClick={handleGenerateEvaluations} disabled={!isCalculated || loading}>
                     {loading ? <Loader className="animate-spin" /> : <Bot />}
-                    <span>{aiEvaluations ? 'Regerar' : 'Gerar Avaliações'}</span>
+                    <span>{aiEvaluations ? 'Regerar' : 'Gerar Avaliação'}</span>
                 </Button>
             </div>
         </div>
@@ -119,32 +114,27 @@ export default function EvaluationsTab() {
       <CardContent>
         {!isCalculated ? (
           <div className="flex items-center justify-center h-48 text-muted-foreground">
-            Preencha o formulário para gerar as avaliações.
+            Preencha o formulário para gerar a avaliação.
           </div>
         ) : loading ? (
            <div className="flex items-center justify-center h-48">
              <Loader className="h-8 w-8 animate-spin text-primary" />
            </div>
-        ) : aiEvaluations ? (
-          <Accordion type="single" collapsible className="w-full">
-            {evaluationItems.map((item, index) => (
-              <AccordionItem value={`item-${index + 1}`} key={index}>
-                <AccordionTrigger>Avaliação do {item.title}</AccordionTrigger>
-                <AccordionContent>
-                  <div className="space-y-4">
-                    <p className="whitespace-pre-wrap">{item.content}</p>
-                    <Button variant="outline" size="sm" onClick={() => handleShare(`Avaliação do ${item.title}:\n\n${item.content}`)}>
-                      <WhatsAppIcon className="h-4 w-4 mr-2" />
-                      Compartilhar no WhatsApp
-                    </Button>
-                  </div>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
+        ) : generalEvaluation ? (
+           <div className="space-y-4">
+            <Textarea
+              readOnly
+              value={generalEvaluation}
+              className="h-96 text-base"
+            />
+             <Button variant="outline" size="sm" onClick={() => handleShare(`Avaliação Geral do Processo:\n\n${generalEvaluation}`)}>
+              <WhatsAppIcon className="h-4 w-4 mr-2" />
+              Compartilhar no WhatsApp
+            </Button>
+          </div>
         ) : (
           <div className="flex items-center justify-center h-48 text-muted-foreground">
-            Clique em "Gerar Avaliações" para ver a análise da IA.
+            Clique em "Gerar Avaliação" para ver a análise da IA.
           </div>
         )}
       </CardContent>
