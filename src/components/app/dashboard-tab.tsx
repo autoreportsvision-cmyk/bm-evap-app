@@ -9,6 +9,9 @@ const chartConfig = {
   value: {
     label: "Valor",
   },
+  rate: {
+    label: "Taxa (%)",
+  },
 } as const;
 
 // HSL Colors

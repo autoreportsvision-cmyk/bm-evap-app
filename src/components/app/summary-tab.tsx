@@ -42,7 +42,7 @@ export default function SummaryTab() {
                       <TableHead className="text-right">Brix Entrada (%)</TableHead>
                       <TableHead className="text-right">Brix Saída (%)</TableHead>
                       <TableHead className="text-right">Vapor Gerado (t/h)</TableHead>
-                      <TableHead className="text-right">Taxa Evaporação (t/h)</TableHead>
+                      <TableHead className="text-right">Taxa Evaporação (%)</TableHead>
                       <TableHead className="text-right">Eficiência (%)</TableHead>
                   </TableRow>
                 </TableHeader>

@@ -54,7 +54,7 @@ export type EffectSummaryData = {
   brixOut: number;
   vazaoCaldo: number;
   vaporGerado: number;
-  taxaEvaporacao: number; // This is in t/h for the summary table
+  taxaEvaporacao: number; // This is in % for the summary table
   eficiencia: number;
 };
 

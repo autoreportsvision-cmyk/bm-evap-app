@@ -117,13 +117,16 @@ export function performCalculations(data: EvaporationData): CalculatedData {
     const brixIn = brixValues[index];
     const brixOut = brixValues[index + 1];
     
+    // Calcula a taxa de evaporação em porcentagem
+    const taxaEvaporacaoPercent = (1 - (brixIn / brixOut)) * 100;
+    
     return {
         name: `Efeito ${index + 1}`,
         brixIn: parseFloat(brixIn.toFixed(2)),
         brixOut: parseFloat(brixOut.toFixed(2)),
         vazaoCaldo: parseFloat(vazaoCaldo.toFixed(2)), // This should be calculated per effect
         vaporGerado: parseFloat(vaporGeneration[index].generation.toFixed(2)),
-        taxaEvaporacao: parseFloat(evaporationRatesTons[index].toFixed(2)),
+        taxaEvaporacao: parseFloat(taxaEvaporacaoPercent.toFixed(2)), // Usa o valor em porcentagem
         eficiencia: parseFloat(effectEfficiency[index].efficiency.toFixed(2)),
     }
   });
@@ -134,7 +137,7 @@ export function performCalculations(data: EvaporationData): CalculatedData {
     consumoVaporTotal,
     brixEvolution,
     effectEfficiency,
-    evaporationRate: evaporationRatePercent, // Exportando a taxa em porcentagem
+    evaporationRate: evaporationRatePercent, // Exportando a taxa em porcentagem para o gráfico
     vaporGeneration,
     kgVaporPorM2,
     caldoClarificado,
