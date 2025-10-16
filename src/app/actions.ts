@@ -35,12 +35,15 @@ export async function createCheckoutSession(
   uid: string
 ): Promise<{ success: boolean; sessionId?: string; error?: string }> {
   try {
+    if (!process.env.STRIPE_API_KEY) {
+      throw new Error('A chave da API Stripe (STRIPE_API_KEY) não está configurada nas variáveis de ambiente.');
+    }
+    if (!process.env.STRIPE_PRICE_ID) {
+      throw new Error('O ID do preço do Stripe (STRIPE_PRICE_ID) não está configurado nas variáveis de ambiente.');
+    }
+    
     const headersList = headers();
     const origin = headersList.get('origin');
-
-    if (!process.env.STRIPE_PRICE_ID) {
-      throw new Error('STRIPE_PRICE_ID is not set in environment variables.');
-    }
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
