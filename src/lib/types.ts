@@ -54,7 +54,7 @@ export type EffectSummaryData = {
   brixOut: number;
   vazaoCaldo: number;
   vaporGerado: number;
-  taxaEvaporacao: number;
+  taxaEvaporacao: number; // This is in t/h for the summary table
   eficiencia: number;
 };
 
@@ -64,7 +64,7 @@ export type CalculatedData = {
   consumoVaporTotal: number;
   brixEvolution: { name: string; brix: number }[];
   effectEfficiency: { name: string; efficiency: number }[];
-  evaporationRate: { name: string; rate: number }[];
+  evaporationRate: { name: string; rate: number }[]; // This is in % for the chart
   vaporGeneration: { name: string; generation: number }[];
   kgVaporPorM2: { name: string; value: number }[];
   caldoClarificado: Record<string, any>;

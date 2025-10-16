@@ -113,8 +113,8 @@ export default function DashboardTab() {
       </Card>
       <Card className="xl:col-span-1">
         <CardHeader>
-          <CardTitle>Taxa de Evaporação</CardTitle>
-          <CardDescription>Taxa de evaporação por efeito.</CardDescription>
+          <CardTitle>Taxa de Evaporação (%)</CardTitle>
+          <CardDescription>Percentual de evaporação por efeito.</CardDescription>
         </CardHeader>
         <CardContent>
           <ChartContainer config={chartConfig} className="h-[250px] w-full">
@@ -124,7 +124,7 @@ export default function DashboardTab() {
               <YAxis />
               <ChartTooltip content={<ChartTooltipContent />} />
               <Legend />
-              <Line type="monotone" dataKey="rate" stroke="hsl(var(--primary))" name="Taxa (t/h)" />
+              <Line type="monotone" dataKey="rate" stroke="hsl(var(--primary))" name="Taxa (%)" />
             </LineChart>
           </ChartContainer>
         </CardContent>
