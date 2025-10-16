@@ -26,8 +26,22 @@ export default function EvaluationsTab() {
       return;
     }
     setLoading(true);
+
+    const effectsPayload = calculatedData.effectsSummary.reduce((acc, effect, index) => {
+        const effectKey = `effect${index + 1}`;
+        acc[effectKey] = {
+            "Brix Entrada (%)": effect.brixIn,
+            "Brix Saída (%)": effect.brixOut,
+            "Vapor Gerado (t/h)": effect.vaporGerado,
+            "Taxa Evaporação (t/h)": effect.taxaEvaporacao,
+            "Eficiência (%)": effect.eficiencia,
+        };
+        return acc;
+    }, {} as Record<string, any>);
+
+
     const result = await getAiEvaluations({
-      ...calculatedData.effects,
+      ...effectsPayload,
       overallSummary: calculatedData.overallSummary,
     });
     setLoading(false);
