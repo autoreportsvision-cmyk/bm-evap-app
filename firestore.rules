@@ -1,60 +1,39 @@
-/**
- * @fileoverview Firestore Security Rules for BM_EVAPORAÇÃO application.
- *
- * Core Philosophy:
- * This ruleset enforces role-based access control, with different permissions granted to 'admin', 'basic', and 'premium' users.
- * A user can only read and write their own data, unless they are an 'admin'.
- *
- * Data Structure:
- * All user data is stored under the /users/{userId} path, where {userId} corresponds to the user's Firebase Authentication UID.
- *
- * Key Security Decisions:
- * - Users can only create their own user document with their own UID.
- * - Users cannot list all users.
- * - Admin users have elevated privileges.
- *
- * Denormalization for Authorization:
- * The 'role' field is denormalized directly onto the user document. This avoids having to query a separate collection to determine the user's role, making the rules more efficient.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /**
-     * @description Grants access to user documents based on role.
-     * @path /users/{userId}
-     * @allow (create) - User with UID 'user_abc' can create their own document at /users/user_abc.
-     * @allow (get) - User with UID 'user_abc' can read their own document at /users/user_abc.
-     * @allow (update) - User with UID 'user_abc' can update their own document at /users/user_abc.
-     * @allow (delete) - User with UID 'user_abc' can delete their own document at /users/user_abc.
-     * @allow (get) - Admin user can read any user document.
-     * @deny (create) - User with UID 'user_abc' cannot create a document at /users/user_xyz.
-     * @deny (update) - User with UID 'user_abc' cannot update the document at /users/user_xyz.
-     * @deny (delete) - User with UID 'user_abc' cannot delete the document at /users/user_xyz.
-     * @principle Enforces user-ownership for non-admin users and allows full access for admin users.
-     */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
+      // Helper function to check if the authenticated user is the owner of the document.
       function isOwner(userId) {
-        return request.auth.uid == userId;
+        return request.auth != null && request.auth.uid == userId;
       }
-
-      function isAdmin() {
-        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
-      }
-
+      
+      // Helper function to check if the authenticated user is the owner of the existing document.
       function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
+        return request.auth != null && request.auth.uid == userId && resource != null;
       }
 
-      allow get: if isOwner(userId) || isAdmin();
+      // Read permissions: Only the owner can get their profile.
+      allow get: if isOwner(userId);
+
+      // List permission: No one can list users.
       allow list: if false;
-      allow create: if isOwner(userId) && request.resource.data.id == request.auth.uid;
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id || isAdmin();
-      allow delete: if isExistingOwner(userId) || isAdmin();
+
+      // Write permissions:
+      // - Only the user themselves can create their profile (self-creation).
+      // - Validate that the userId in the path matches the authenticated user's UID.
+      allow create: if isOwner(userId);
+
+      // Only the owner can update their profile.
+      allow update: if isExistingOwner(userId);
+
+      // Only the owner can delete their profile, if it exists.
+      allow delete: if isExistingOwner(userId);
     }
+  }
+
+  // Generic helper function to check if a user is signed in.
+  function isSignedIn() {
+    return request.auth != null;
   }
 }
