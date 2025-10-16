@@ -32,14 +32,9 @@ export type GenerateEffectEvaluationsInput = z.infer<
   typeof GenerateEffectEvaluationsInputSchema
 >;
 
-const GenerateEffectEvaluationsOutputSchema = z.object({
-  generalEvaluation: z
-    .string()
-    .describe('Detailed general text evaluation for the entire evaporation process'),
-});
-export type GenerateEffectEvaluationsOutput = z.infer<
-  typeof GenerateEffectEvaluationsOutputSchema
->;
+// The output is a raw string, not a JSON object.
+export type GenerateEffectEvaluationsOutput = string;
+
 
 export async function generateEffectEvaluations(
   input: GenerateEffectEvaluationsInput
@@ -52,7 +47,8 @@ const generateEffectEvaluationsFlow = ai.defineFlow(
   {
     name: 'generateEffectEvaluationsFlow',
     inputSchema: GenerateEffectEvaluationsInputSchema.extend({ currentDate: z.string() }),
-    outputSchema: GenerateEffectEvaluationsOutputSchema,
+    // Output is a raw string, so no schema is needed.
+    // outputSchema: GenerateEffectEvaluationsOutputSchema, 
   },
   async input => {
     // Construct the prompt using the input data
@@ -142,13 +138,11 @@ Dados por Efeito:
 *   Efeito 5: ${JSON.stringify(input.effect5)}
 `;
 
-    const {output} = await ai.generate({
+    const result = await ai.generate({
       prompt: promptText,
-      model: 'googleai/gemini-2.5-flash', // Specifying model as it's used in genkit.ts
-      output: {
-        schema: GenerateEffectEvaluationsOutputSchema,
-      },
+      model: 'googleai/gemini-2.5-flash',
     });
-    return output!;
+
+    return result.text;
   }
 );
