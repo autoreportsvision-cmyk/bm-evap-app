@@ -9,7 +9,6 @@ import { Bot, Loader, Share2 } from 'lucide-react';
 import { getAiEvaluations, getSharedEvaluation } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import WhatsAppIcon from '@/components/icons/whatsapp-icon';
-import { Textarea } from '../ui/textarea';
 
 export default function EvaluationsTab() {
   const { calculatedData, aiEvaluations, setAiEvaluations, isCalculated } = useAppContext();
@@ -122,11 +121,11 @@ export default function EvaluationsTab() {
            </div>
         ) : generalEvaluation ? (
            <div className="space-y-4">
-            <Textarea
-              readOnly
-              value={generalEvaluation}
-              className="h-96 text-base"
-            />
+            <div
+              className="whitespace-pre-wrap rounded-md border bg-background p-4 h-96 overflow-auto text-base"
+            >
+              {generalEvaluation}
+            </div>
              <Button variant="outline" size="sm" onClick={() => handleShare(`Avaliação Geral do Processo:\n\n${generalEvaluation}`)}>
               <WhatsAppIcon className="h-4 w-4 mr-2" />
               Compartilhar no WhatsApp
