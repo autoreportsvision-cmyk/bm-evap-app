@@ -1,33 +1,42 @@
 import { z } from 'zod';
 
-const numberOrEmptyString = z.union([
-    z.number(),
-    z.literal('')
-]).pipe(
-    z.coerce.number({ invalid_type_error: "Valor inválido." })
-);
+const numberFromString = z.string().transform((val, ctx) => {
+    if (val === '') {
+        // Permite campos vazios inicialmente, mas a validação de regra refinará isso.
+        return NaN;
+    }
+    const parsed = parseFloat(val);
+    if (isNaN(parsed)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Deve ser um número.",
+        });
+        return z.NEVER;
+    }
+    return parsed;
+});
 
 export const formSchema = z.object({
-  vazaoCaldo: numberOrEmptyString.refine(val => val > 0, { message: 'Vazão é obrigatória.' }),
-  brixCaldo: numberOrEmptyString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  temperaturaCaldo: numberOrEmptyString.refine(val => val !== undefined && val !== null, { message: 'Temperatura é obrigatória.' }),
-  pressaoVapor: numberOrEmptyString.refine(val => val > 0, { message: 'Pressão é obrigatória.' }),
+  vazaoCaldo: numberFromString.refine(val => val > 0, { message: 'Vazão é obrigatória.' }),
+  brixCaldo: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  temperaturaCaldo: numberFromString.refine(val => !isNaN(val), { message: 'Temperatura é obrigatória.' }),
+  pressaoVapor: numberFromString.refine(val => val > 0, { message: 'Pressão é obrigatória.' }),
   preAquecimento: z.boolean(),
-  tempEntradaAquec: z.optional(numberOrEmptyString),
-  tempSaidaAquec: z.optional(numberOrEmptyString),
-  brixEfeito1: numberOrEmptyString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  brixEfeito2: numberOrEmptyString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  brixEfeito3: numberOrEmptyString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  brixEfeito4: numberOrEmptyString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  brixEfeito5: numberOrEmptyString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  areaEfeito1: numberOrEmptyString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
-  areaEfeito2: numberOrEmptyString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
-  areaEfeito3: numberOrEmptyString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
-  areaEfeito4: numberOrEmptyString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
-  areaEfeito5: numberOrEmptyString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  tempEntradaAquec: z.optional(numberFromString),
+  tempSaidaAquec: z.optional(numberFromString),
+  brixEfeito1: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  brixEfeito2: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  brixEfeito3: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  brixEfeito4: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  brixEfeito5: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  areaEfeito1: numberFromString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  areaEfeito2: numberFromString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  areaEfeito3: numberFromString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  areaEfeito4: numberFromString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  areaEfeito5: numberFromString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
 }).refine(data => {
     if (data.preAquecimento) {
-        return data.tempEntradaAquec !== undefined && data.tempEntradaAquec !== '' && data.tempSaidaAquec !== undefined && data.tempSaidaAquec !== '';
+        return data.tempEntradaAquec !== undefined && !isNaN(data.tempEntradaAquec) && data.tempSaidaAquec !== undefined && !isNaN(data.tempSaidaAquec);
     }
     return true;
 }, {
