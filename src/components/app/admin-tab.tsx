@@ -1,16 +1,12 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useFirestore } from '@/firebase';
+import { useState, useMemo } from 'react';
+import { useFirestore, useUser } from '@/firebase';
 import {
   collection,
   doc,
   updateDoc,
-  query,
-  where,
-  getDocs,
-  limit,
 } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -33,77 +29,35 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '../ui/separator';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { useMemoFirebase } from '@/firebase/provider';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 
 export default function AdminTab() {
   const firestore = useFirestore();
+  const { user: adminUser } = useUser();
   const { toast } = useToast();
-
   const [searchQuery, setSearchQuery] = useState('');
-  const [foundUser, setFoundUser] = useState<UserProfile | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Busca inválida',
-        description: 'Por favor, insira o nome do usuário a ser buscado.',
-      });
-      return;
-    }
+  const usersCollectionRef = useMemoFirebase(() => {
+    return collection(firestore, 'users');
+  }, [firestore]);
 
-    setIsLoading(true);
-    setHasSearched(true);
-    setFoundUser(null);
+  const { data: users, isLoading, error } = useCollection<UserProfile>(usersCollectionRef);
 
-    try {
-      const usersRef = collection(firestore, 'users');
-      // Case-sensitive search for simplicity. For case-insensitive, more complex setup is needed.
-      const q = query(
-        usersRef,
-        where('displayName', '==', searchQuery.trim()),
-        limit(1)
-      );
-
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
-        setFoundUser(null);
-      } else {
-        const userDoc = querySnapshot.docs[0];
-        setFoundUser({ ...userDoc.data(), id: userDoc.id } as UserProfile);
-      }
-    } catch (error) {
-      console.error('Erro ao buscar usuário:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Erro na Busca',
-        description: 'Não foi possível buscar o usuário. Verifique as regras de segurança do Firestore.',
-      });
-      setFoundUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRoleChange = async (newRole: 'basic' | 'premium') => {
-    if (!foundUser || foundUser.role === 'admin') {
+  const handleRoleChange = async (userId: string, newRole: 'basic' | 'premium' | 'admin') => {
+    if (userId === adminUser?.uid) {
       toast({
         variant: 'destructive',
         title: 'Ação não permitida',
-        description: 'A permissão de administradores não pode ser alterada.',
+        description: 'Você não pode alterar sua própria permissão.',
       });
       return;
     }
 
     try {
-      const userDocRef = doc(firestore, 'users', foundUser.id);
+      const userDocRef = doc(firestore, 'users', userId);
       await updateDoc(userDocRef, { role: newRole });
-      
-      // Update local state to reflect the change
-      setFoundUser(prev => prev ? { ...prev, role: newRole } : null);
 
       toast({
         title: 'Sucesso!',
@@ -119,33 +73,34 @@ export default function AdminTab() {
     }
   };
 
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    return users.filter(user =>
+      user.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [users, searchQuery]);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Gerenciamento de Usuários</CardTitle>
         <CardDescription>
-          Busque um usuário pelo nome para gerenciar suas permissões.
+          Busque um usuário pelo nome ou e-mail para gerenciar suas permissões.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <form onSubmit={handleSearch} className="flex items-center gap-2">
-          <Input
-            id="search"
-            type="text"
-            placeholder="Digite o nome do usuário..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-grow"
-          />
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? (
-              <Loader className="animate-spin" />
-            ) : (
-              <Search />
-            )}
-            <span>Buscar</span>
-          </Button>
-        </form>
+        <div className="flex items-center gap-2">
+            <Search className="h-5 w-5 text-muted-foreground" />
+            <Input
+                id="search"
+                type="text"
+                placeholder="Buscar por nome ou e-mail..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-grow"
+            />
+        </div>
 
         <Separator />
 
@@ -153,45 +108,63 @@ export default function AdminTab() {
           <div className="flex justify-center items-center py-8">
             <Loader className="h-8 w-8 animate-spin" />
           </div>
-        ) : foundUser ? (
-          <div className="p-4 border rounded-lg space-y-4">
-            <div className='flex items-center gap-3'>
-                 <UserIcon className="w-8 h-8 text-muted-foreground"/>
-                 <div>
-                    <p className="font-semibold">{foundUser.displayName}</p>
-                    <p className="text-sm text-muted-foreground">{foundUser.email}</p>
-                 </div>
+        ) : error ? (
+            <div className="text-center text-destructive py-8">
+                <p>Erro ao carregar usuários.</p>
+                <p className="text-xs text-muted-foreground">{error.message}</p>
+                 <p className="text-xs text-muted-foreground mt-2">Verifique se você tem permissão de administrador e se as regras do Firestore estão configuradas corretamente para permitir a listagem de usuários.</p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="role-select">Permissão do Usuário</Label>
-              <div className="flex items-center gap-2">
-                <Select
-                  value={foundUser.role}
-                  onValueChange={(value) => handleRoleChange(value as 'basic' | 'premium')}
-                  disabled={foundUser.role === 'admin'}
-                >
-                  <SelectTrigger id="role-select" className="w-[180px]">
-                    <SelectValue placeholder="Selecione a permissão" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="basic">Básico</SelectItem>
-                    <SelectItem value="premium">Premium</SelectItem>
-                  </SelectContent>
-                </Select>
-                 {foundUser.role === 'admin' && (
-                    <p className="text-sm text-muted-foreground">(Permissão de Admin não pode ser alterada)</p>
-                )}
-              </div>
-            </div>
-          </div>
-        ) : hasSearched ? (
-          <div className="text-center text-muted-foreground py-8">
-            Nenhum usuário encontrado com este nome. Verifique o nome e tente novamente.
+        ) : filteredUsers.length > 0 ? (
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Usuário</TableHead>
+                        <TableHead>Permissão</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {filteredUsers.map(user => (
+                        <TableRow key={user.id}>
+                            <TableCell>
+                                <div className='flex items-center gap-3'>
+                                    <UserIcon className="w-8 h-8 text-muted-foreground"/>
+                                    <div>
+                                        <p className="font-semibold">{user.displayName || 'Nome não definido'}</p>
+                                        <p className="text-sm text-muted-foreground">{user.email}</p>
+                                    </div>
+                                </div>
+                            </TableCell>
+                            <TableCell>
+                                <div className="flex items-center gap-2">
+                                <Select
+                                  value={user.role}
+                                  onValueChange={(value) => handleRoleChange(user.id, value as 'basic' | 'premium' | 'admin')}
+                                  disabled={user.id === adminUser?.uid || user.role === 'admin'}
+                                >
+                                  <SelectTrigger id={`role-select-${user.id}`} className="w-[180px]">
+                                    <SelectValue placeholder="Selecione a permissão" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="basic">Básico</SelectItem>
+                                    <SelectItem value="premium">Premium</SelectItem>
+                                    <SelectItem value="admin" disabled>Admin</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                 {(user.id === adminUser?.uid || user.role === 'admin') && (
+                                    <p className="text-sm text-muted-foreground">(Não pode ser alterado)</p>
+                                )}
+                              </div>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
           </div>
         ) : (
-             <div className="text-center text-muted-foreground py-8">
-                Insira o nome de um usuário para começar.
-            </div>
+          <div className="text-center text-muted-foreground py-8">
+            Nenhum usuário encontrado.
+          </div>
         )}
       </CardContent>
     </Card>
