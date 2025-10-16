@@ -123,8 +123,12 @@ Status Geral: A evaporação apresenta pontos críticos no Brix do xarope e nece
 
 ###🕛🕛 Temperaturas e pressões ideais de operação:
 
-1º EFEITO : 
-2º EFEITO:...
+PRÉ EVAPORADOR: 1,5 kgf/cm² - 126ºC
+1º EFEITO:  0,7kgf/cm² - 114ºC
+2º EFEITO:  0,2kgf/cm² - 104ºC
+3º EFEITO:  -0,2kgf/cm² - 93ºC
+4º EFEITO:  -0,5kgf/cm² - 80ºC
+5º EFEITO:  -0,8kgf/cm² - 60ºC
 \`\`\`
 
 ### Dados do Processo para Análise (da tela DASHBOARD):
