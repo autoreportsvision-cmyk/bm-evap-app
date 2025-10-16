@@ -5,7 +5,10 @@ import { generateEffectEvaluations } from '@/ai/flows/generate-effect-evaluation
 import type { GenerateEffectEvaluationsInput, GenerateEffectEvaluationsOutput } from '@/ai/flows/generate-effect-evaluations';
 import { chat } from '@/ai/flows/chat-flow';
 import type { ChatInput } from '@/ai/flows/chat-flow';
-
+import { stripe } from '@/lib/stripe';
+import { auth } from 'firebase-admin';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
   try {
@@ -25,4 +28,44 @@ export async function getChatResponse(input: ChatInput): Promise<{ success: bool
         console.error(error);
         return { success: false, error: 'Falha ao obter resposta do chat.' };
     }
+}
+
+
+export async function createCheckoutSession(
+  uid: string
+): Promise<{ success: boolean; sessionId?: string; error?: string }> {
+  try {
+    const headersList = headers();
+    const origin = headersList.get('origin');
+
+    if (!process.env.STRIPE_PRICE_ID) {
+      throw new Error('STRIPE_PRICE_ID is not set in environment variables.');
+    }
+
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: process.env.STRIPE_PRICE_ID,
+          quantity: 1,
+        },
+      ],
+      mode: 'subscription',
+      success_url: `${origin}/`,
+      cancel_url: `${origin}/pricing`,
+      metadata: {
+        userId: uid,
+      },
+    });
+
+    if (!session.id) {
+        throw new Error('Could not create Stripe checkout session');
+    }
+
+    return { success: true, sessionId: session.id };
+  } catch (error) {
+    console.error(error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    return { success: false, error: `Falha ao criar sessão de checkout: ${errorMessage}` };
+  }
 }

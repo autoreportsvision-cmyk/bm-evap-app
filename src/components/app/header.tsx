@@ -30,9 +30,7 @@ export default function AppHeader() {
   };
 
   const handleGoToPricing = () => {
-    // Futuramente, redirecionar para a página de planos/preços
-    // router.push('/pricing');
-    alert('Página de planos em construção!');
+    router.push('/pricing');
   }
 
   return (
