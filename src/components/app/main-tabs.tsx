@@ -1,19 +1,39 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, LayoutDashboard, Bot, FileSignature } from 'lucide-react';
+import { FileText, LayoutDashboard, Bot, FileSignature, Shield } from 'lucide-react';
 import FormTab from './form-tab';
 import DashboardTab from './dashboard-tab';
 import SummaryTab from './summary-tab';
 import EvaluationsTab from './evaluations-tab';
+import { useUser } from '@/firebase';
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { useMemoFirebase } from '@/firebase/provider';
+import { useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/types';
+import AdminTab from './admin-tab';
+
 
 export default function MainTabs() {
   const [activeTab, setActiveTab] = useState('form');
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+
+  const isAdmin = userProfile?.role === 'admin';
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className={`grid w-full ${isAdmin ? 'grid-cols-5' : 'grid-cols-4'}`}>
         <TabsTrigger value="form">
           <FileSignature className="mr-2 h-4 w-4" />
           Formulário
@@ -30,6 +50,12 @@ export default function MainTabs() {
           <Bot className="mr-2 h-4 w-4" />
           Avaliações (IA)
         </TabsTrigger>
+        {isAdmin && (
+          <TabsTrigger value="admin">
+            <Shield className="mr-2 h-4 w-4" />
+            Admin
+          </TabsTrigger>
+        )}
       </TabsList>
       <TabsContent value="form">
         <FormTab onCalculate={() => setActiveTab('dashboard')} />
@@ -43,6 +69,11 @@ export default function MainTabs() {
       <TabsContent value="evaluations">
         <EvaluationsTab />
       </TabsContent>
+      {isAdmin && (
+        <TabsContent value="admin">
+          <AdminTab />
+        </TabsContent>
+      )}
     </Tabs>
   );
 }

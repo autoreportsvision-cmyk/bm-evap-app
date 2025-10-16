@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -10,10 +11,6 @@
           "type": "string",
           "description": "Unique identifier for the User entity."
         },
-        "username": {
-          "type": "string",
-          "description": "The user's unique username."
-        },
         "email": {
           "type": "string",
           "description": "The user's email address.",
@@ -22,12 +19,23 @@
         "displayName": {
           "type": "string",
           "description": "The user's display name."
+        },
+        "role": {
+          "type": "string",
+          "description": "The user's role in the application.",
+          "enum": ["admin", "basic"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date and time the user was created."
         }
       },
       "required": [
         "id",
-        "username",
-        "email"
+        "email",
+        "role",
+        "createdAt"
       ]
     }
   },
@@ -38,24 +46,11 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/users/{userId}",
-        "definition": {
-          "entityName": "User",
-          "schema": {
-            "$ref": "#/backend/entities/User"
-          },
-          "description": "Collection to store user profile information.  Authorization is based on the user's ID.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the user."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "To support the BM_EVAPORAÇÃO application with its core features and the principle of Authorization Independence, the following Firestore data structure is recommended. The design focuses on enabling secure data access while minimizing the need for complex security rules and `get()` calls. It uses a path-based ownership model for user data.\n\n*   **Authorization Independence:** User-specific data, such as forms and evaluations, is stored under the `/users/{userId}` path. This inherently provides authorization independence because access control is directly tied to the `userId` derived from `request.auth.uid`. No `get()` calls are needed to verify ownership.\n*   **QAPs (Rules are not Filters):** By segregating data based on user ID, listing operations become secure and efficient. Listing data under `/users/{userId}` only returns documents owned by that user. The structure avoids mixing data with different access requirements within the same collection.\n*   **Data Clarity and Predictability:** Data is organized into explicit collections like `forms`, `evaluations`, and `effects`, which provides clarity and predictability. Field naming follows a consistent pattern.\n"
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "#/entities/User"
+      },
+      "description": "Collection to store user profile information."
+    }
   }
 }

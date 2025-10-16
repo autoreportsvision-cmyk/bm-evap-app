@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -6,11 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/firebase';
+import { useAuth, useFirestore } from '@/firebase';
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import Logo from '@/components/app/logo';
 
@@ -19,6 +21,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isSigningUp, setIsSigningUp] = useState(false);
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -26,7 +29,19 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       if (isSigningUp) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Create user profile in Firestore
+        const userRef = doc(firestore, 'users', user.uid);
+        await setDoc(userRef, {
+          id: user.uid,
+          email: user.email,
+          displayName: user.displayName,
+          role: 'basic',
+          createdAt: serverTimestamp(),
+        });
+
         toast({ title: 'Sucesso', description: 'Conta criada com sucesso! Você será redirecionado.' });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
