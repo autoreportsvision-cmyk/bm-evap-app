@@ -10,7 +10,7 @@ import { Bot, Loader, Send } from 'lucide-react';
 import { useAppContext } from '@/context/app-context';
 import { getChatResponse } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import type { ChatInput } from '@/app/actions';
+import type { ChatInput } from '@/lib/types';
 
 type Message = {
   role: 'user' | 'model';
