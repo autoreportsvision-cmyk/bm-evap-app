@@ -16,7 +16,6 @@ import { Calculator } from 'lucide-react';
 import { useAppContext } from '@/context/app-context';
 import { EvaporationData, formSchema } from '@/lib/types';
 import { performCalculations } from '@/lib/calculations';
-import { INITIAL_FORM_DATA } from '@/lib/constants';
 import { useToast } from '@/hooks/use-toast';
 
 type FormTabProps = {
@@ -37,6 +36,8 @@ export default function FormTab({ onCalculate }: FormTabProps) {
   const { control, handleSubmit, watch, reset, formState: { errors } } = form;
 
   useEffect(() => {
+    // This ensures the form is updated if the context data changes from another source,
+    // but it won't reset the form after a successful submission within this component.
     reset(formData);
   }, [formData, reset]);
 
@@ -45,18 +46,22 @@ export default function FormTab({ onCalculate }: FormTabProps) {
   
   const onSubmit = (data: EvaporationData) => {
     try {
-      // Zod already returns parsed numbers, so no need for formSchema.parse(data) again if using RHF with zodResolver
+      // The `data` object is already validated and parsed by zodResolver.
       setFormData(data);
       const results = performCalculations(data);
       setCalculatedData(results);
       setIsCalculated(true);
       onCalculate();
+      toast({
+        title: "Sucesso!",
+        description: "Cálculos realizados. Verifique a aba Dashboard.",
+      });
     } catch(e) {
       console.error(e);
       toast({
         variant: "destructive",
-        title: "Erro de Validação",
-        description: "Por favor, verifique os campos do formulário.",
+        title: "Erro no Cálculo",
+        description: "Ocorreu um erro ao realizar os cálculos. Por favor, verifique os dados de entrada.",
       });
     }
   };
@@ -267,3 +272,5 @@ export default function FormTab({ onCalculate }: FormTabProps) {
     </Card>
   );
 }
+
+    

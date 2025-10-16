@@ -1,33 +1,44 @@
 
 import { z } from 'zod';
 
+const numberFromEmptyString = z.literal('').transform(() => NaN);
+
+const numberFromString = z.string().transform((val, ctx) => {
+    if (val.trim() === '') return NaN;
+    const parsed = parseFloat(val.replace(',', '.'));
+    if (isNaN(parsed)) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Deve ser um número.",
+        });
+        return z.NEVER;
+    }
+    return parsed;
+});
+
 const numberFromStringOrNumber = z.union([
-    z.string().transform((val, ctx) => {
-        if (val === null || val.trim() === '') {
-            return NaN;
-        }
-        const parsed = parseFloat(val.replace(',', '.'));
-        if (isNaN(parsed)) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "Deve ser um número.",
-            });
-            return z.NEVER;
-        }
-        return parsed;
-    }),
+    numberFromEmptyString,
+    numberFromString,
     z.number(),
 ]).refine(val => !isNaN(val), { message: "Valor inválido." });
+
+const optionalNumberFromString = z.union([
+    numberFromEmptyString,
+    numberFromString,
+    z.number(),
+    z.nan(),
+    z.undefined()
+]);
 
 
 export const formSchema = z.object({
   vazaoCaldo: numberFromStringOrNumber.refine(val => val > 0, { message: 'Vazão é obrigatória.' }),
   brixCaldo: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  temperaturaCaldo: numberFromStringOrNumber.optional(),
+  temperaturaCaldo: optionalNumberFromString,
   pressaoVapor: numberFromStringOrNumber.refine(val => !isNaN(val) && val > 0, { message: 'Pressão é obrigatória e deve ser maior que zero.' }),
   preAquecimento: z.boolean(),
-  tempEntradaAquec: z.optional(numberFromStringOrNumber),
-  tempSaidaAquec: z.optional(numberFromStringOrNumber),
+  tempEntradaAquec: optionalNumberFromString,
+  tempSaidaAquec: optionalNumberFromString,
   brixEfeito1: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
   brixEfeito2: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
   brixEfeito3: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
@@ -42,11 +53,13 @@ export const formSchema = z.object({
     if (data.preAquecimento) {
         const tempEntrada = data.tempEntradaAquec;
         const tempSaida = data.tempSaidaAquec;
-        return tempEntrada !== undefined && !isNaN(tempEntrada) && tempEntrada > 0 && tempSaida !== undefined && !isNaN(tempSaida) && tempSaida > 0;
+        const entradaValida = tempEntrada !== undefined && !isNaN(tempEntrada) && tempEntrada > 0;
+        const saidaValida = tempSaida !== undefined && !isNaN(tempSaida) && tempSaida > 0;
+        return entradaValida && saidaValida;
     }
     return true;
 }, {
-    message: "Temperaturas do aquecedor são obrigatórias e devem ser maiores que zero.",
+    message: "Temperaturas do aquecedor são obrigatórias e devem ser maiores que zero quando o pré-aquecimento está habilitado.",
     path: ["tempEntradaAquec"],
 });
 
@@ -79,3 +92,5 @@ export type AIEvaluations = {
   effect4Evaluation: string;
   effect5Evaluation: string;
 };
+
+    
