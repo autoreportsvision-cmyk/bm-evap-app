@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { Loader, Search, MoreHorizontal, ShieldCheck, UserCog } from 'lucide-react';
@@ -37,7 +37,7 @@ export default function AdminTab() {
       const usersRef = collection(firestore, 'users');
       // Firestore does not support case-insensitive queries directly on the server.
       // A common workaround is to store a searchable, lowercased version of the name.
-      // For a better UX, one might query >= searchQuery and < searchQuery + '\uf8ff' to get prefix matches.
+      // For this implementation, we query for names that start with the search query.
       const q = query(usersRef, where('displayName', '>=', searchQuery), where('displayName', '<=', searchQuery + '\uf8ff'));
       const querySnapshot = await getDocs(q);
       const users: UserProfile[] = [];
@@ -81,7 +81,7 @@ export default function AdminTab() {
       toast({
         variant: 'destructive',
         title: 'Erro ao alterar permissão',
-        description: error.message,
+        description: 'Você não tem permissão para realizar esta ação.',
       });
     }
   };
@@ -146,7 +146,7 @@ export default function AdminTab() {
                         <span>Admin</span>
                       </div>
                     ) : (
-                      user.id !== currentUser?.uid && (
+                      currentUser?.uid !== user.id && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon">
@@ -164,7 +164,7 @@ export default function AdminTab() {
                         </DropdownMenu>
                       )
                     )}
-                     {user.id === currentUser?.uid && user.role !== 'admin' && (
+                     {user.id === currentUser?.uid && (
                         <div className="flex items-center justify-end gap-2 text-muted-foreground">
                             <UserCog className="h-4 w-4" />
                             <span>Você</span>
