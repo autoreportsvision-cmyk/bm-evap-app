@@ -26,6 +26,28 @@ export function performCalculations(data: EvaporationData): CalculatedData {
   const consumoVaporTotal = (vazaoCaldo * (100 - tempCaldo) / 540) + (pressaoVapor * 1.5) ; // Placeholder
 
   const brixValues = [brixCaldo, brixEfeito1, brixEfeito2, brixEfeito3, brixEfeito4, brixEfeito5];
+  const vazaoMassaCaldo = vazaoCaldo * densidadeCaldo / 1000; // t/h
+
+  const vazoesSaida: number[] = [];
+  let vazaoEntradaAtual = vazaoMassaCaldo;
+  for (let i = 0; i < 5; i++) {
+    const brixIn = brixValues[i];
+    const brixOut = brixValues[i+1];
+    const vazaoSaida = vazaoEntradaAtual * (brixIn / brixOut);
+    vazoesSaida.push(vazaoSaida);
+    vazaoEntradaAtual = vazaoSaida;
+  }
+  
+  const evaporationRates: number[] = [];
+  vazaoEntradaAtual = vazaoMassaCaldo;
+  for (let i = 0; i < 5; i++) {
+    const brixIn = brixValues[i];
+    const brixOut = brixValues[i+1];
+    const rate = vazaoEntradaAtual * (1 - (brixIn / brixOut));
+    evaporationRates.push(rate);
+    vazaoEntradaAtual = vazaoEntradaAtual - rate;
+  }
+
 
   const brixEvolution = [
     { name: 'Efeito 1', brix: brixEfeito1 },
@@ -45,7 +67,7 @@ export function performCalculations(data: EvaporationData): CalculatedData {
   
   const evaporationRate = brixEvolution.map((item, index) => ({
       name: item.name,
-      rate: (vazaoCaldo / (index + 2)) * (item.brix / brixCaldo) * 0.1
+      rate: evaporationRates[index]
   })).map(d => ({...d, rate: parseFloat(d.rate.toFixed(1))}));
 
   const vaporGeneration = brixEvolution.map((item, index) => ({
@@ -88,8 +110,6 @@ export function performCalculations(data: EvaporationData): CalculatedData {
   const effectsSummary: EffectSummaryData[] = brixEvolution.map((effect, index) => {
     const brixIn = brixValues[index];
     const brixOut = brixValues[index + 1];
-    const solidsIn = vazaoCaldo * densidadeCaldo * (brixIn / 100);
-    const vazaoCaldoOut = solidsIn / (densidadeCaldo * (brixOut / 100)); // Simplified
     
     return {
         name: `Efeito ${index + 1}`,
