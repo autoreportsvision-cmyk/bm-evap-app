@@ -6,14 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/context/app-context';
 import { Bot, Loader, Share2 } from 'lucide-react';
-import { getAiEvaluations, getSharedEvaluation } from '@/app/actions';
+import { getAiEvaluations } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import WhatsAppIcon from '@/components/icons/whatsapp-icon';
 
 export default function EvaluationsTab() {
   const { calculatedData, aiEvaluations, setAiEvaluations, isCalculated } = useAppContext();
   const [loading, setLoading] = useState(false);
-  const [shareLoading, setShareLoading] = useState(false);
   const { toast } = useToast();
 
   const handleGenerateEvaluations = async () => {
@@ -49,7 +48,6 @@ export default function EvaluationsTab() {
     setLoading(false);
 
     if (result.success && result.data) {
-      // Wrap the raw string response into the expected object structure
       setAiEvaluations({ generalEvaluation: result.data });
       toast({
         title: "Sucesso",
@@ -65,30 +63,18 @@ export default function EvaluationsTab() {
   };
   
   const handleShare = (text: string) => {
+    if (!text) {
+      toast({
+        variant: 'destructive',
+        title: 'Nenhum relatório para compartilhar',
+        description: 'Por favor, gere uma avaliação primeiro.',
+      });
+      return;
+    }
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   };
   
-  const handleShareCombined = async () => {
-    if (!calculatedData) return;
-    setShareLoading(true);
-    const result = await getSharedEvaluation({
-      clarifiedJuice: calculatedData.caldoClarificado.summary,
-      firstEffectPerformance: calculatedData.desempenhoPrimeiroEfeito.summary,
-    });
-    setShareLoading(false);
-
-    if (result.success && result.data) {
-      handleShare(result.data.combinedEvaluationText);
-    } else {
-       toast({
-        variant: "destructive",
-        title: "Erro ao compartilhar",
-        description: result.error,
-      });
-    }
-  }
-
   const generalEvaluation = aiEvaluations?.generalEvaluation;
 
   return (
@@ -100,9 +86,9 @@ export default function EvaluationsTab() {
                 <CardDescription>Análise consolidada do desempenho do sistema de evaporação gerada por IA.</CardDescription>
             </div>
             <div className="flex flex-shrink-0 gap-2">
-                 <Button onClick={handleShareCombined} disabled={!isCalculated || shareLoading}>
-                    {shareLoading ? <Loader className="animate-spin" /> : <Share2 />}
-                    <span>Compartilhar Resumo</span>
+                 <Button onClick={() => handleShare(generalEvaluation || '')} disabled={!generalEvaluation}>
+                    <WhatsAppIcon className="h-4 w-4" />
+                    <span>Compartilhar Relatório</span>
                 </Button>
                 <Button onClick={handleGenerateEvaluations} disabled={!isCalculated || loading}>
                     {loading ? <Loader className="animate-spin" /> : <Bot />}
@@ -121,17 +107,11 @@ export default function EvaluationsTab() {
              <Loader className="h-8 w-8 animate-spin text-primary" />
            </div>
         ) : generalEvaluation ? (
-           <div className="space-y-4">
-            <div
+           <div
               className="whitespace-pre-wrap rounded-md border bg-background p-4 overflow-auto text-base"
+              dangerouslySetInnerHTML={{ __html: generalEvaluation.replace(/\n/g, '<br />') }}
             >
-              {generalEvaluation}
             </div>
-             <Button variant="outline" size="sm" onClick={() => handleShare(`Avaliação Geral do Processo:\n\n${generalEvaluation}`)}>
-              <WhatsAppIcon className="h-4 w-4 mr-2" />
-              Compartilhar no WhatsApp
-            </Button>
-          </div>
         ) : (
           <div className="flex items-center justify-center h-48 text-muted-foreground">
             Clique em "Gerar Avaliação" para ver a análise da IA.
