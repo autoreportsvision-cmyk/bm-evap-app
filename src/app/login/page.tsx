@@ -49,7 +49,7 @@ export default function LoginPage() {
             toast({
                 variant: 'destructive',
                 title: 'Erro',
-                description: 'Por favor, insira seu nome completo.',
+                description: 'Por favor, insira seu nome.',
             });
             return;
         }
@@ -134,11 +134,11 @@ export default function LoginPage() {
             <form onSubmit={handleAuth} className="space-y-4">
                {isSigningUp && (
                 <div className="space-y-2">
-                  <Label htmlFor="displayName">Nome Completo</Label>
+                  <Label htmlFor="displayName">Nome</Label>
                   <Input
                     id="displayName"
                     type="text"
-                    placeholder="Seu nome completo"
+                    placeholder="Seu nome"
                     required
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}

@@ -80,7 +80,7 @@ export default function AdminTab() {
       toast({
         variant: 'destructive',
         title: 'Erro na Busca',
-        description: 'Não foi possível buscar o usuário.',
+        description: 'Não foi possível buscar o usuário. Verifique as regras de segurança do Firestore.',
       });
       setFoundUser(null);
     } finally {
@@ -124,7 +124,7 @@ export default function AdminTab() {
       <CardHeader>
         <CardTitle>Gerenciamento de Usuários</CardTitle>
         <CardDescription>
-          Busque um usuário pelo nome completo para gerenciar suas permissões.
+          Busque um usuário pelo nome para gerenciar suas permissões.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -132,7 +132,7 @@ export default function AdminTab() {
           <Input
             id="search"
             type="text"
-            placeholder="Digite o nome completo do usuário..."
+            placeholder="Digite o nome do usuário..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-grow"
@@ -186,7 +186,7 @@ export default function AdminTab() {
           </div>
         ) : hasSearched ? (
           <div className="text-center text-muted-foreground py-8">
-            Nenhum usuário encontrado com este nome. Verifique o nome completo e tente novamente.
+            Nenhum usuário encontrado com este nome. Verifique o nome e tente novamente.
           </div>
         ) : (
              <div className="text-center text-muted-foreground py-8">
