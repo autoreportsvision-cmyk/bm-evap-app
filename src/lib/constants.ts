@@ -1,3 +1,4 @@
+
 import type { EvaporationData } from './types';
 
 // Using empty strings for number inputs that will be parsed
@@ -7,9 +8,6 @@ export const INITIAL_FORM_DATA: EvaporationData = {
   brixCaldo: '' as any,
   temperaturaCaldo: '' as any,
   pressaoVapor: '' as any,
-  preAquecimento: false,
-  tempEntradaAquec: '' as any,
-  tempSaidaAquec: '' as any,
   brixEfeito1: '' as any,
   brixEfeito2: '' as any,
   brixEfeito3: '' as any,

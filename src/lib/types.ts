@@ -36,9 +36,6 @@ export const formSchema = z.object({
   brixCaldo: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
   temperaturaCaldo: optionalNumberFromString,
   pressaoVapor: numberFromStringOrNumber.refine(val => !isNaN(val), { message: 'Pressão é obrigatória.' }),
-  preAquecimento: z.boolean(),
-  tempEntradaAquec: optionalNumberFromString,
-  tempSaidaAquec: optionalNumberFromString,
   brixEfeito1: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
   brixEfeito2: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
   brixEfeito3: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
@@ -49,18 +46,6 @@ export const formSchema = z.object({
   areaEfeito3: numberFromStringOrNumber.refine(val => val > 0, { message: 'Área é obrigatória.' }),
   areaEfeito4: numberFromStringOrNumber.refine(val => val > 0, { message: 'Área é obrigatória.' }),
   areaEfeito5: numberFromStringOrNumber.refine(val => val > 0, { message: 'Área é obrigatória.' }),
-}).refine(data => {
-    if (data.preAquecimento) {
-        const tempEntrada = data.tempEntradaAquec;
-        const tempSaida = data.tempSaidaAquec;
-        const entradaValida = tempEntrada !== undefined && !isNaN(tempEntrada) && tempEntrada > 0;
-        const saidaValida = tempSaida !== undefined && !isNaN(tempSaida) && tempSaida > 0;
-        return entradaValida && saidaValida;
-    }
-    return true;
-}, {
-    message: "Temperaturas do aquecedor são obrigatórias e devem ser maiores que zero quando o pré-aquecimento está habilitado.",
-    path: ["tempEntradaAquec"],
 });
 
 export type EvaporationData = z.infer<typeof formSchema>;

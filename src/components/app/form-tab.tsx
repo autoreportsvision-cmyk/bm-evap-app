@@ -9,7 +9,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Calculator } from 'lucide-react';
 
@@ -33,7 +32,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
     mode: 'onBlur',
   });
 
-  const { control, handleSubmit, watch, reset, formState: { errors } } = form;
+  const { control, handleSubmit, reset, formState: { errors } } = form;
 
   useEffect(() => {
     // This ensures the form is updated if the context data changes from another source,
@@ -41,8 +40,6 @@ export default function FormTab({ onCalculate }: FormTabProps) {
     reset(formData);
   }, [formData, reset]);
 
-
-  const preAquecimento = watch('preAquecimento');
   
   const onSubmit = (data: EvaporationData) => {
     try {
@@ -111,45 +108,6 @@ export default function FormTab({ onCalculate }: FormTabProps) {
               />
               {errors.pressaoVapor && <p className="text-destructive text-xs">{errors.pressaoVapor.message}</p>}
             </div>
-          </div>
-          
-          <Separator />
-
-          <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Controller
-                    name="preAquecimento"
-                    control={control}
-                    render={({ field }) => (
-                        <Checkbox id="preAquecimento" checked={field.value} onCheckedChange={field.onChange} />
-                    )}
-                />
-                <label htmlFor="preAquecimento" className="text-sm font-medium leading-none">
-                Habilitar Pré-aquecimento
-                </label>
-            </div>
-            {preAquecimento && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-md bg-muted/50">
-                    <div className="space-y-2">
-                        <Label htmlFor="tempEntradaAquec">Temp. Entrada Aquecedor (°C)</Label>
-                        <Controller
-                            name="tempEntradaAquec"
-                            control={control}
-                            render={({ field }) => <Input id="tempEntradaAquec" type="text" inputMode='decimal' placeholder="ex: 90" {...field} onChange={e => field.onChange(e.target.value)} />}
-                        />
-                         {errors.tempEntradaAquec && <p className="text-destructive text-xs">{errors.tempEntradaAquec.message}</p>}
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="tempSaidaAquec">Temp. Saída Aquecedor (°C)</Label>
-                        <Controller
-                            name="tempSaidaAquec"
-                            control={control}
-                            render={({ field }) => <Input id="tempSaidaAquec" type="text" inputMode='decimal' placeholder="ex: 115" {...field} onChange={e => field.onChange(e.target.value)} />}
-                        />
-                         {errors.tempSaidaAquec && <p className="text-destructive text-xs">{errors.tempSaidaAquec.message}</p>}
-                    </div>
-                </div>
-            )}
           </div>
           
           <Separator />
@@ -272,5 +230,3 @@ export default function FormTab({ onCalculate }: FormTabProps) {
     </Card>
   );
 }
-
-    
