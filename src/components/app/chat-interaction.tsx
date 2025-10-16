@@ -37,12 +37,13 @@ export default function ChatInteraction() {
     const userMessage: Message = { role: 'user', content: input };
     const newMessages: Message[] = [...messages, userMessage];
     setMessages(newMessages);
+    const currentInput = input;
     setInput('');
     setLoading(true);
 
     const chatInput: ChatInput = {
       history: messages, // Send the history *before* the new message
-      message: input,
+      message: currentInput,
       processData: JSON.stringify(calculatedData, null, 2),
     };
 
@@ -58,7 +59,7 @@ export default function ChatInteraction() {
         title: 'Erro na IA',
         description: result.error || 'Não foi possível obter uma resposta.',
       });
-       // remove the user message if the call fails
+       // Restore the user message if the call fails
        setMessages(messages);
     }
   };
