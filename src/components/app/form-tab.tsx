@@ -105,7 +105,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
               {errors.temperaturaCaldo && <p className="text-destructive text-xs">{errors.temperaturaCaldo.message}</p>}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="pressaoVapor">Pressão Vapor (kgf/cm²)</Label>
+              <Label htmlFor="pressaoVapor">Pressão Vapor de Escape (kgf/cm²)</Label>
                <Controller
                 name="pressaoVapor"
                 control={control}
@@ -211,7 +211,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
 
            <div className="space-y-4">
             <h3 className="text-lg font-medium">Área de Troca Térmica por Efeito (m²)</h3>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+             <div className="grid grid-cols-1 md-grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="areaEfeito1">Efeito 1</Label>
                     <Controller
@@ -274,3 +274,5 @@ export default function FormTab({ onCalculate }: FormTabProps) {
     </Card>
   );
 }
+
+    
