@@ -1,0 +1,75 @@
+/**
+ * @fileoverview Firestore Security Rules for the BM_EVAPORAÇÃO application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model. Each user has full control
+ * over their own data, stored under their unique user ID. No data is publicly
+ * accessible unless explicitly stated otherwise.
+ *
+ * Data Structure:
+ * All user-specific data is nested under the /users/{userId} collection.
+ *
+ * Key Security Decisions:
+ * - Users can only access their own data.
+ * - User listing is disallowed.
+ * - Data validation is relaxed in this prototype to allow for rapid iteration.
+ *   Only authorization-critical fields are validated.
+ *
+ * Denormalization for Authorization:
+ *  - The `id` field inside the `/users/{userId}` document should match the `userId`
+ *    path parameter to avoid needing `get()` calls to verify ownership.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Manages user profile information. Only the user themselves can read, update, or delete their profile.
+     * @path /users/{userId}
+     * @allow (create) User with ID 'user123' creates their profile.
+     *   - Auth: {uid: 'user123'}
+     *   - Request Data: {id: 'user123', username: 'testuser', email: 'test@example.com'}
+     * @allow (get, update, delete) User with ID 'user123' reads/updates/deletes their profile.
+     *   - Auth: {uid: 'user123'}
+     * @deny (create) User with ID 'user123' tries to create a profile with a mismatched ID.
+     *   - Auth: {uid: 'user123'}
+     *   - Request Data: {id: 'user456', username: 'testuser', email: 'test@example.com'}
+     * @deny (get, update, delete) User with ID 'user456' tries to access user 'user123's profile.
+     *   - Auth: {uid: 'user456'}
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId} {
+      // Helper function to check if the user is signed in and owns the resource.
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+          return isOwner(userId) && resource != null;
+      }
+
+      // Only allow a user to create their own profile.
+      allow create: if isSignedIn()
+                      && isOwner(userId)
+                      && request.resource.data.id == userId;
+
+      // Only allow the owner to get their profile.
+      allow get: if isSignedIn()
+                   && isOwner(userId);
+
+      // Only allow the owner to list their own profile.
+      allow list: if false;
+
+      // Only allow the owner to update their own profile.
+      allow update: if isExistingOwner(userId)
+                    && request.resource.data.id == resource.data.id; //Enforce immutability
+
+      // Only allow the owner to delete their own profile.
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}
