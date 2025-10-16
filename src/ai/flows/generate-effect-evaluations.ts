@@ -11,12 +11,20 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
+const EffectDataSchema = z.object({
+  'Brix Entrada (%)': z.number(),
+  'Brix Saída (%)': z.number(),
+  'Vapor Gerado (t/h)': z.number(),
+  'Taxa Evaporação (t/h)': z.number(),
+  'Eficiência (%)': z.number(),
+});
+
 const GenerateEffectEvaluationsInputSchema = z.object({
-  effect1: z.string().describe('JSON string with metrics and results for effect 1'),
-  effect2: z.string().describe('JSON string with metrics and results for effect 2'),
-  effect3: z.string().describe('JSON string with metrics and results for effect 3'),
-  effect4: z.string().describe('JSON string with metrics and results for effect 4'),
-  effect5: z.string().describe('JSON string with metrics and results for effect 5'),
+  effect1: z.string().transform(str => JSON.parse(str)).pipe(EffectDataSchema),
+  effect2: z.string().transform(str => JSON.parse(str)).pipe(EffectDataSchema),
+  effect3: z.string().transform(str => JSON.parse(str)).pipe(EffectDataSchema),
+  effect4: z.string().transform(str => JSON.parse(str)).pipe(EffectDataSchema),
+  effect5: z.string().transform(str => JSON.parse(str)).pipe(EffectDataSchema),
   overallSummary: z.string().describe('Overall summary of the evaporation process'),
 });
 export type GenerateEffectEvaluationsInput = z.infer<
