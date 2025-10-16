@@ -10,16 +10,30 @@ import { Label } from '@/components/ui/label';
 import { useAuth, useFirestore } from '@/firebase';
 import {
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import Logo from '@/components/app/logo';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSigningUp, setIsSigningUp] = useState(false);
+  const [showResetDialog, setShowResetDialog] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+
   const auth = useAuth();
   const firestore = useFirestore();
   const router = useRouter();
@@ -32,7 +46,6 @@ export default function LoginPage() {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         
-        // Create user profile in Firestore
         const userRef = doc(firestore, 'users', user.uid);
         await setDoc(userRef, {
           id: user.uid,
@@ -58,54 +71,115 @@ export default function LoginPage() {
     }
   };
 
+  const handlePasswordReset = async () => {
+    if (!resetEmail) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Por favor, insira seu e-mail.',
+      });
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, resetEmail);
+      toast({
+        title: 'E-mail enviado',
+        description: 'Verifique sua caixa de entrada para redefinir sua senha.',
+      });
+      setShowResetDialog(false);
+      setResetEmail('');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao enviar e-mail',
+        description: error.message,
+      });
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-sm">
-        <CardHeader className="items-center text-center">
-            <Logo />
-            <CardTitle className="text-2xl">BM_EVAPORAÇÃO</CardTitle>
-            <CardDescription>
-                {isSigningUp ? 'Crie sua conta para continuar' : 'Entre na sua conta para continuar'}
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleAuth} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+    <>
+      <div className="flex min-h-screen items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-sm">
+          <CardHeader className="items-center text-center">
+              <Logo />
+              <CardTitle className="text-2xl">BM_EVAPORAÇÃO</CardTitle>
+              <CardDescription>
+                  {isSigningUp ? 'Crie sua conta para continuar' : 'Entre na sua conta para continuar'}
+              </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleAuth} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Senha</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <Button type="submit" className="w-full">
+                {isSigningUp ? 'Registrar' : 'Entrar'}
+              </Button>
+            </form>
+            <div className="mt-4 text-center text-sm">
+              {isSigningUp ? 'Já tem uma conta?' : 'Não tem uma conta?'}
+              <button
+                onClick={() => setIsSigningUp(!isSigningUp)}
+                className="ml-1 underline"
+              >
+                {isSigningUp ? 'Entrar' : 'Registrar'}
+              </button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+            <div className="mt-2 text-center text-sm">
+              <button
+                onClick={() => setShowResetDialog(true)}
+                className="underline"
+              >
+                Esqueceu sua senha?
+              </button>
             </div>
-            <Button type="submit" className="w-full">
-              {isSigningUp ? 'Registrar' : 'Entrar'}
-            </Button>
-          </form>
-          <div className="mt-4 text-center text-sm">
-            {isSigningUp ? 'Já tem uma conta?' : 'Não tem uma conta?'}
-            <button
-              onClick={() => setIsSigningUp(!isSigningUp)}
-              className="ml-1 underline"
-            >
-              {isSigningUp ? 'Entrar' : 'Registrar'}
-            </button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Redefinir Senha</AlertDialogTitle>
+            <AlertDialogDescription>
+              Insira seu endereço de e-mail abaixo. Se uma conta estiver associada a ele, enviaremos um link para redefinir sua senha.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="reset-email">Email</Label>
+            <Input
+              id="reset-email"
+              type="email"
+              placeholder="seu-email@exemplo.com"
+              value={resetEmail}
+              onChange={(e) => setResetEmail(e.target.value)}
+            />
           </div>
-        </CardContent>
-      </Card>
-    </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handlePasswordReset}>Enviar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
