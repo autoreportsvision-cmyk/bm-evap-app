@@ -122,7 +122,7 @@ export default function EvaluationsTab() {
         ) : generalEvaluation ? (
            <div className="space-y-4">
             <div
-              className="whitespace-pre-wrap rounded-md border bg-background p-4 h-96 overflow-auto text-base"
+              className="whitespace-pre-wrap rounded-md border bg-background p-4 overflow-auto text-base"
             >
               {generalEvaluation}
             </div>
