@@ -32,7 +32,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
     mode: 'onBlur',
   });
 
-  const { control, handleSubmit, reset, formState: { errors } } = form;
+  const { control, handleSubmit, reset, formState: { errors }, watch } = form;
 
   useEffect(() => {
     // This ensures the form is updated if the context data changes from another source,
@@ -77,7 +77,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
               <Controller
                 name="vazaoCaldo"
                 control={control}
-                render={({ field }) => <Input id="vazaoCaldo" type="text" inputMode='decimal' placeholder="ex: 750" {...field} onChange={e => field.onChange(e.target.value)}/>}
+                render={({ field }) => <Input id="vazaoCaldo" type="text" inputMode='decimal' placeholder="ex: 750" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''}/>}
               />
               {errors.vazaoCaldo && <p className="text-destructive text-xs">{errors.vazaoCaldo.message}</p>}
             </div>
@@ -86,7 +86,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
                <Controller
                 name="brixCaldo"
                 control={control}
-                render={({ field }) => <Input id="brixCaldo" type="text" inputMode='decimal' placeholder="ex: 15" {...field} onChange={e => field.onChange(e.target.value)}/>}
+                render={({ field }) => <Input id="brixCaldo" type="text" inputMode='decimal' placeholder="ex: 15" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''}/>}
               />
               {errors.brixCaldo && <p className="text-destructive text-xs">{errors.brixCaldo.message}</p>}
             </div>
@@ -95,7 +95,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
                <Controller
                 name="temperaturaCaldo"
                 control={control}
-                render={({ field }) => <Input id="temperaturaCaldo" type="text" inputMode='decimal' placeholder="ex: 105" {...field} onChange={e => field.onChange(e.target.value)} />}
+                render={({ field }) => <Input id="temperaturaCaldo" type="text" inputMode='decimal' placeholder="ex: 105" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''} />}
               />
               {errors.temperaturaCaldo && <p className="text-destructive text-xs">{errors.temperaturaCaldo.message}</p>}
             </div>
@@ -104,7 +104,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
                <Controller
                 name="pressaoVapor"
                 control={control}
-                render={({ field }) => <Input id="pressaoVapor" type="text" inputMode='decimal' placeholder="ex: 2.5" {...field} onChange={e => field.onChange(e.target.value)} />}
+                render={({ field }) => <Input id="pressaoVapor" type="text" inputMode='decimal' placeholder="ex: 2.5" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''} />}
               />
               {errors.pressaoVapor && <p className="text-destructive text-xs">{errors.pressaoVapor.message}</p>}
             </div>
@@ -120,7 +120,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
                     <Controller
                         name="brixEfeito1"
                         control={control}
-                        render={({ field }) => <Input id="brixEfeito1" type="text" inputMode='decimal' placeholder="ex: 18" {...field} onChange={e => field.onChange(e.target.value)} />}
+                        render={({ field }) => <Input id="brixEfeito1" type="text" inputMode='decimal' placeholder="ex: 18" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''} />}
                     />
                     {errors.brixEfeito1 && <p className="text-destructive text-xs">{errors.brixEfeito1.message}</p>}
                 </div>
@@ -129,7 +129,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
                     <Controller
                         name="brixEfeito2"
                         control={control}
-                        render={({ field }) => <Input id="brixEfeito2" type="text" inputMode='decimal' placeholder="ex: 22.5" {...field} onChange={e => field.onChange(e.target.value)} />}
+                        render={({ field }) => <Input id="brixEfeito2" type="text" inputMode='decimal' placeholder="ex: 22.5" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''} />}
                     />
                     {errors.brixEfeito2 && <p className="text-destructive text-xs">{errors.brixEfeito2.message}</p>}
                 </div>
@@ -138,7 +138,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
                     <Controller
                         name="brixEfeito3"
                         control={control}
-                        render={({ field }) => <Input id="brixEfeito3" type="text" inputMode='decimal' placeholder="ex: 28.5" {...field} onChange={e => field.onChange(e.target.value)} />}
+                        render={({ field }) => <Input id="brixEfeito3" type="text" inputMode='decimal' placeholder="ex: 28.5" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''} />}
                     />
                     {errors.brixEfeito3 && <p className="text-destructive text-xs">{errors.brixEfeito3.message}</p>}
                 </div>
@@ -147,7 +147,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
                     <Controller
                         name="brixEfeito4"
                         control={control}
-                        render={({ field }) => <Input id="brixEfeito4" type="text" inputMode='decimal' placeholder="ex: 37.5" {...field} onChange={e => field.onChange(e.target.value)} />}
+                        render={({ field }) => <Input id="brixEfeito4" type="text" inputMode='decimal' placeholder="ex: 37.5" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''} />}
                     />
                     {errors.brixEfeito4 && <p className="text-destructive text-xs">{errors.brixEfeito4.message}</p>}
                 </div>
@@ -156,7 +156,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
                     <Controller
                         name="brixEfeito5"
                         control={control}
-                        render={({ field }) => <Input id="brixEfeito5" type="text" inputMode='decimal' placeholder="ex: 65" {...field} onChange={e => field.onChange(e.target.value)} />}
+                        render={({ field }) => <Input id="brixEfeito5" type="text" inputMode='decimal' placeholder="ex: 65" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''} />}
                     />
                     {errors.brixEfeito5 && <p className="text-destructive text-xs">{errors.brixEfeito5.message}</p>}
                 </div>
@@ -173,7 +173,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
                     <Controller
                         name="areaEfeito1"
                         control={control}
-                        render={({ field }) => <Input id="areaEfeito1" type="text" inputMode='decimal' placeholder="ex: 1000" {...field} onChange={e => field.onChange(e.target.value)} />}
+                        render={({ field }) => <Input id="areaEfeito1" type="text" inputMode='decimal' placeholder="ex: 1000" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''} />}
                     />
                     {errors.areaEfeito1 && <p className="text-destructive text-xs">{errors.areaEfeito1.message}</p>}
                 </div>
@@ -182,7 +182,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
                     <Controller
                         name="areaEfeito2"
                         control={control}
-                        render={({ field }) => <Input id="areaEfeito2" type="text" inputMode='decimal' placeholder="ex: 1000" {...field} onChange={e => field.onChange(e.target.value)} />}
+                        render={({ field }) => <Input id="areaEfeito2" type="text" inputMode='decimal' placeholder="ex: 1000" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''} />}
                     />
                     {errors.areaEfeito2 && <p className="text-destructive text-xs">{errors.areaEfeito2.message}</p>}
                 </div>
@@ -191,7 +191,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
                     <Controller
                         name="areaEfeito3"
                         control={control}
-                        render={({ field }) => <Input id="areaEfeito3" type="text" inputMode='decimal' placeholder="ex: 1000" {...field} onChange={e => field.onChange(e.target.value)} />}
+                        render={({ field }) => <Input id="areaEfeito3" type="text" inputMode='decimal' placeholder="ex: 1000" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''} />}
                     />
                     {errors.areaEfeito3 && <p className="text-destructive text-xs">{errors.areaEfeito3.message}</p>}
                 </div>
@@ -200,7 +200,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
                     <Controller
                         name="areaEfeito4"
                         control={control}
-                        render={({ field }) => <Input id="areaEfeito4" type="text" inputMode='decimal' placeholder="ex: 800" {...field} onChange={e => field.onChange(e.target.value)} />}
+                        render={({ field }) => <Input id="areaEfeito4" type="text" inputMode='decimal' placeholder="ex: 800" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''} />}
                     />
                     {errors.areaEfeito4 && <p className="text-destructive text-xs">{errors.areaEfeito4.message}</p>}
                 </div>
@@ -209,7 +209,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
                     <Controller
                         name="areaEfeito5"
                         control={control}
-                        render={({ field }) => <Input id="areaEfeito5" type="text" inputMode='decimal' placeholder="ex: 800" {...field} onChange={e => field.onChange(e.target.value)} />}
+                        render={({ field }) => <Input id="areaEfeito5" type="text" inputMode='decimal' placeholder="ex: 800" {...field} onChange={e => field.onChange(e.target.value)} value={field.value ?? ''} />}
                     />
                     {errors.areaEfeito5 && <p className="text-destructive text-xs">{errors.areaEfeito5.message}</p>}
                 </div>

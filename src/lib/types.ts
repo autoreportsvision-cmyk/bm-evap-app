@@ -1,10 +1,8 @@
 
 import { z } from 'zod';
 
-const numberFromEmptyString = z.literal('').transform(() => NaN);
-
 const numberFromString = z.string().transform((val, ctx) => {
-    if (val.trim() === '') return NaN;
+    if (val.trim() === '') return NaN; // Keep this for required fields that are empty strings
     const parsed = parseFloat(val.replace(',', '.'));
     if (isNaN(parsed)) {
         ctx.addIssue({
@@ -16,19 +14,20 @@ const numberFromString = z.string().transform((val, ctx) => {
     return parsed;
 });
 
+// For required fields
 const numberFromStringOrNumber = z.union([
     z.number(),
     z.string().refine(s => s.trim() !== '', { message: "Campo obrigatório." }).transform(val => parseFloat(val.replace(',', '.')))
 ]).refine(val => !isNaN(val), { message: "Valor inválido." });
 
 
+// For optional fields
 const optionalNumberFromString = z.union([
-    numberFromEmptyString,
-    numberFromString,
-    z.number(),
-    z.nan(),
-    z.undefined()
-]);
+  z.literal(''),
+  z.string().transform(v => v.trim() === '' ? undefined : parseFloat(v.replace(',', '.')))
+]).refine(v => v === undefined || !isNaN(v), {
+  message: 'Deve ser um número válido.',
+}).optional();
 
 
 export const formSchema = z.object({
