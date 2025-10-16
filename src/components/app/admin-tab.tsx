@@ -1,47 +1,110 @@
+
 'use client';
 
-import { useMemo } from 'react';
-import { useFirestore, useUser } from '@/firebase';
-import { collection, doc, updateDoc } from 'firebase/firestore';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import { useMemoFirebase } from '@/firebase/provider';
+import { useState } from 'react';
+import { useFirestore } from '@/firebase';
+import {
+  collection,
+  doc,
+  updateDoc,
+  query,
+  where,
+  getDocs,
+  limit,
+} from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { MoreHorizontal, ShieldOff, Loader } from 'lucide-react';
+import { Loader, Search, User as UserIcon } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Separator } from '../ui/separator';
 
 export default function AdminTab() {
   const firestore = useFirestore();
-  const { user: adminUser } = useUser();
   const { toast } = useToast();
 
-  const usersCollectionRef = useMemoFirebase(() => {
-    return collection(firestore, 'users');
-  }, [firestore]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [foundUser, setFoundUser] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  const { data: users, isLoading } = useCollection<UserProfile>(usersCollectionRef);
-
-  const handleRoleChange = async (userId: string, newRole: 'basic' | 'premium') => {
-    if (userId === adminUser?.uid) {
-        toast({
-            variant: 'destructive',
-            title: 'Ação não permitida',
-            description: 'Você não pode alterar sua própria permissão.',
-        });
-        return;
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Busca inválida',
+        description: 'Por favor, insira o nome do usuário a ser buscado.',
+      });
+      return;
     }
-    
+
+    setIsLoading(true);
+    setHasSearched(true);
+    setFoundUser(null);
+
     try {
-      const userDocRef = doc(firestore, 'users', userId);
+      const usersRef = collection(firestore, 'users');
+      // Case-sensitive search for simplicity. For case-insensitive, more complex setup is needed.
+      const q = query(
+        usersRef,
+        where('displayName', '==', searchQuery.trim()),
+        limit(1)
+      );
+
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        setFoundUser(null);
+      } else {
+        const userDoc = querySnapshot.docs[0];
+        setFoundUser({ ...userDoc.data(), id: userDoc.id } as UserProfile);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar usuário:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro na Busca',
+        description: 'Não foi possível buscar o usuário.',
+      });
+      setFoundUser(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleRoleChange = async (newRole: 'basic' | 'premium') => {
+    if (!foundUser || foundUser.role === 'admin') {
+      toast({
+        variant: 'destructive',
+        title: 'Ação não permitida',
+        description: 'A permissão de administradores não pode ser alterada.',
+      });
+      return;
+    }
+
+    try {
+      const userDocRef = doc(firestore, 'users', foundUser.id);
       await updateDoc(userDocRef, { role: newRole });
+      
+      // Update local state to reflect the change
+      setFoundUser(prev => prev ? { ...prev, role: newRole } : null);
+
       toast({
         title: 'Sucesso!',
         description: `A permissão do usuário foi alterada para ${newRole}.`,
@@ -56,79 +119,79 @@ export default function AdminTab() {
     }
   };
 
-  const sortedUsers = useMemo(() => {
-    if (!users) return [];
-    return [...users].sort((a, b) => {
-        if (a.role === 'admin' && b.role !== 'admin') return -1;
-        if (a.role !== 'admin' && b.role === 'admin') return 1;
-        return (a.email || '').localeCompare(b.email || '');
-    });
-  }, [users]);
-
-
   return (
     <Card>
       <CardHeader>
         <CardTitle>Gerenciamento de Usuários</CardTitle>
         <CardDescription>
-          Visualize e gerencie as permissões dos usuários da plataforma.
+          Busque um usuário pelo nome completo para gerenciar suas permissões.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
+        <form onSubmit={handleSearch} className="flex items-center gap-2">
+          <Input
+            id="search"
+            type="text"
+            placeholder="Digite o nome completo do usuário..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-grow"
+          />
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <Loader className="animate-spin" />
+            ) : (
+              <Search />
+            )}
+            <span>Buscar</span>
+          </Button>
+        </form>
+
+        <Separator />
+
         {isLoading ? (
           <div className="flex justify-center items-center py-8">
             <Loader className="h-8 w-8 animate-spin" />
           </div>
-        ) : !users || users.length === 0 ? (
+        ) : foundUser ? (
+          <div className="p-4 border rounded-lg space-y-4">
+            <div className='flex items-center gap-3'>
+                 <UserIcon className="w-8 h-8 text-muted-foreground"/>
+                 <div>
+                    <p className="font-semibold">{foundUser.displayName}</p>
+                    <p className="text-sm text-muted-foreground">{foundUser.email}</p>
+                 </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role-select">Permissão do Usuário</Label>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={foundUser.role}
+                  onValueChange={(value) => handleRoleChange(value as 'basic' | 'premium')}
+                  disabled={foundUser.role === 'admin'}
+                >
+                  <SelectTrigger id="role-select" className="w-[180px]">
+                    <SelectValue placeholder="Selecione a permissão" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basic">Básico</SelectItem>
+                    <SelectItem value="premium">Premium</SelectItem>
+                  </SelectContent>
+                </Select>
+                 {foundUser.role === 'admin' && (
+                    <p className="text-sm text-muted-foreground">(Permissão de Admin não pode ser alterada)</p>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : hasSearched ? (
           <div className="text-center text-muted-foreground py-8">
-            Nenhum usuário encontrado.
+            Nenhum usuário encontrado com este nome. Verifique o nome completo e tente novamente.
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Email</TableHead>
-                <TableHead>Data de Cadastro</TableHead>
-                <TableHead>Permissão</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedUsers.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.email}</TableCell>
-                  <TableCell>
-                    {user.createdAt ? new Date(user.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
-                  </TableCell>
-                  <TableCell>{user.role}</TableCell>
-                  <TableCell className="text-right">
-                    {user.role === 'admin' ? (
-                       <div className="flex items-center justify-end text-muted-foreground">
-                         <ShieldOff className="h-4 w-4 mr-2" />
-                         <span>(Admin)</span>
-                       </div>
-                    ) : (
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'basic')}>
-                            Tornar Básico
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'premium')}>
-                            Tornar Premium
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+             <div className="text-center text-muted-foreground py-8">
+                Insira o nome de um usuário para começar.
+            </div>
         )}
       </CardContent>
     </Card>

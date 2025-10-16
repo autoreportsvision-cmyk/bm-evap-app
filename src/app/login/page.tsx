@@ -12,6 +12,7 @@ import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  updateProfile,
 } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -30,6 +31,7 @@ import {
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
@@ -43,14 +45,26 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       if (isSigningUp) {
+        if (!displayName) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro',
+                description: 'Por favor, insira seu nome completo.',
+            });
+            return;
+        }
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+
+        // Update Firebase Auth profile
+        await updateProfile(user, { displayName });
         
+        // Create user document in Firestore
         const userRef = doc(firestore, 'users', user.uid);
         await setDoc(userRef, {
           id: user.uid,
           email: user.email,
-          displayName: user.displayName,
+          displayName: displayName,
           role: 'basic',
           createdAt: serverTimestamp(),
         });
@@ -110,6 +124,19 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAuth} className="space-y-4">
+               {isSigningUp && (
+                <div className="space-y-2">
+                  <Label htmlFor="displayName">Nome Completo</Label>
+                  <Input
+                    id="displayName"
+                    type="text"
+                    placeholder="Seu nome completo"
+                    required
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                  />
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
