@@ -15,62 +15,70 @@ export default function SummaryTab() {
     );
   }
 
-  const { caldoClarificado, desempenhoPrimeiroEfeito } = calculatedData;
+  const { caldoClarificado, desempenhoPrimeiroEfeito, overallSummary } = calculatedData;
   
   const caldoClarificadoData = Object.entries(caldoClarificado).filter(([key]) => key !== 'summary');
   const desempenhoData = Object.entries(desempenhoPrimeiroEfeito).filter(([key]) => key !== 'summary');
 
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Resumo do Caldo Clarificado</CardTitle>
-          <CardDescription>{caldoClarificado.summary}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Métrica</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {caldoClarificadoData.map(([key, value]) => (
-                <TableRow key={key}>
-                  <TableCell className="font-medium">{key}</TableCell>
-                  <TableCell className="text-right">{value}</TableCell>
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Card className="lg:col-span-3">
+            <CardHeader>
+                <CardTitle>Resumo Geral da Evaporação</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <p className="text-muted-foreground">{overallSummary}</p>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+            <CardTitle>Resumo do Caldo Clarificado</CardTitle>
+            <CardDescription>{caldoClarificado.summary}</CardDescription>
+            </CardHeader>
+            <CardContent>
+            <Table>
+                <TableHeader>
+                <TableRow>
+                    <TableHead>Métrica</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Resumo do Desempenho 1° Efeito</CardTitle>
-          <CardDescription>{desempenhoPrimeiroEfeito.summary}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Métrica</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {desempenhoData.map(([key, value]) => (
-                 <TableRow key={key}>
-                  <TableCell className="font-medium">{key}</TableCell>
-                  <TableCell className="text-right">{value}</TableCell>
+                </TableHeader>
+                <TableBody>
+                {caldoClarificadoData.map(([key, value]) => (
+                    <TableRow key={key}>
+                    <TableCell className="font-medium">{key}</TableCell>
+                    <TableCell className="text-right">{value}</TableCell>
+                    </TableRow>
+                ))}
+                </TableBody>
+            </Table>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+            <CardTitle>Resumo do Desempenho 1° Efeito</CardTitle>
+            <CardDescription>{desempenhoPrimeiroEfeito.summary}</CardDescription>
+            </CardHeader>
+            <CardContent>
+            <Table>
+                <TableHeader>
+                <TableRow>
+                    <TableHead>Métrica</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                </TableHeader>
+                <TableBody>
+                {desempenhoData.map(([key, value]) => (
+                    <TableRow key={key}>
+                    <TableCell className="font-medium">{key}</TableCell>
+                    <TableCell className="text-right">{value}</TableCell>
+                    </TableRow>
+                ))}
+                </TableBody>
+            </Table>
+            </CardContent>
+        </Card>
     </div>
   );
 }
