@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 const numberFromString = z.string().transform((val, ctx) => {
     if (val === null || val === '') {
-        // Permite campos vazios inicialmente, mas a validação de regra refinará isso.
+        // Permite campos vazios inicialmente, que podem ser opcionais.
         return NaN;
     }
     const parsed = parseFloat(val.replace(',', '.'));
@@ -20,7 +20,7 @@ export const formSchema = z.object({
   vazaoCaldo: numberFromString.refine(val => val > 0, { message: 'Vazão é obrigatória.' }),
   brixCaldo: numberFromString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
   temperaturaCaldo: numberFromString.optional(),
-  pressaoVapor: numberFromString.refine(val => val > 0, { message: 'Pressão é obrigatória.' }),
+  pressaoVapor: numberFromString.refine(val => !isNaN(val) && val > 0, { message: 'Pressão é obrigatória e deve ser maior que zero.' }),
   preAquecimento: z.boolean(),
   tempEntradaAquec: z.optional(numberFromString),
   tempSaidaAquec: z.optional(numberFromString),
@@ -38,11 +38,11 @@ export const formSchema = z.object({
     if (data.preAquecimento) {
         const tempEntrada = data.tempEntradaAquec;
         const tempSaida = data.tempSaidaAquec;
-        return tempEntrada !== undefined && !isNaN(tempEntrada) && tempSaida !== undefined && !isNaN(tempSaida);
+        return tempEntrada !== undefined && !isNaN(tempEntrada) && tempEntrada > 0 && tempSaida !== undefined && !isNaN(tempSaida) && tempSaida > 0;
     }
     return true;
 }, {
-    message: "Temperaturas do aquecedor são obrigatórias com pré-aquecimento.",
+    message: "Temperaturas do aquecedor são obrigatórias e devem ser maiores que zero.",
     path: ["tempEntradaAquec"],
 });
 

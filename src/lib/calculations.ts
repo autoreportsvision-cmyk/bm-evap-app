@@ -20,7 +20,10 @@ export function performCalculations(data: EvaporationData): CalculatedData {
    } = data;
 
   const densidadeCaldo = (brixCaldo * 5) + 980; // Placeholder
-  const consumoVaporTotal = (vazaoCaldo * (100 - temperaturaCaldo) / 540) + (pressaoVapor * 1.5) ; // Placeholder
+  
+  // Adjusted placeholder to handle optional temperaturaCaldo
+  const tempCaldo = temperaturaCaldo && !isNaN(temperaturaCaldo) ? temperaturaCaldo : 100;
+  const consumoVaporTotal = (vazaoCaldo * (100 - tempCaldo) / 540) + (pressaoVapor * 1.5) ; // Placeholder
 
   const brixEvolution = [
     { name: 'Efeito 1', brix: brixEfeito1 },
