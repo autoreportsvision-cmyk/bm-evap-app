@@ -29,13 +29,15 @@ export default function EvaluationsTab() {
 
     const effectsPayload = calculatedData.effectsSummary.reduce((acc, effect, index) => {
         const effectKey = `effect${index + 1}`;
-        acc[effectKey] = {
+        const effectData = {
             "Brix Entrada (%)": effect.brixIn,
             "Brix Saída (%)": effect.brixOut,
             "Vapor Gerado (t/h)": effect.vaporGerado,
             "Taxa Evaporação (t/h)": effect.taxaEvaporacao,
             "Eficiência (%)": effect.eficiencia,
         };
+        // The prompt expects a string representation of the object.
+        acc[effectKey] = JSON.stringify(effectData, null, 2);
         return acc;
     }, {} as Record<string, any>);
 
