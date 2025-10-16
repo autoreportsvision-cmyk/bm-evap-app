@@ -12,6 +12,7 @@ import WhatsAppIcon from '@/components/icons/whatsapp-icon';
 import { Textarea } from '../ui/textarea';
 import { DEFAULT_AI_PROMPT } from '@/lib/constants';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import ChatInteraction from './chat-interaction';
 
 export default function EvaluationsTab() {
   const { calculatedData, aiEvaluations, setAiEvaluations, isCalculated } = useAppContext();
@@ -155,6 +156,12 @@ export default function EvaluationsTab() {
                 />
               </CardContent>
             </Card>
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="item-2">
+          <AccordionTrigger>Conversar com a IA sobre os dados</AccordionTrigger>
+          <AccordionContent>
+            <ChatInteraction />
           </AccordionContent>
         </AccordionItem>
       </Accordion>
