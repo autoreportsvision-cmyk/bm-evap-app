@@ -1,4 +1,5 @@
-import type { EvaporationData, CalculatedData } from './types';
+
+import type { EvaporationData, CalculatedData, EffectSummaryData } from './types';
 
 // NOTE: These are placeholder calculations. Replace with real formulas.
 export function performCalculations(data: EvaporationData): CalculatedData {
@@ -21,9 +22,10 @@ export function performCalculations(data: EvaporationData): CalculatedData {
 
   const densidadeCaldo = (brixCaldo * 5) + 980; // Placeholder
   
-  // Adjusted placeholder to handle optional temperaturaCaldo
   const tempCaldo = temperaturaCaldo && !isNaN(temperaturaCaldo) ? temperaturaCaldo : 100;
   const consumoVaporTotal = (vazaoCaldo * (100 - tempCaldo) / 540) + (pressaoVapor * 1.5) ; // Placeholder
+
+  const brixValues = [brixCaldo, brixEfeito1, brixEfeito2, brixEfeito3, brixEfeito4, brixEfeito5];
 
   const brixEvolution = [
     { name: 'Efeito 1', brix: brixEfeito1 },
@@ -57,7 +59,6 @@ export function performCalculations(data: EvaporationData): CalculatedData {
       value: (item.generation * 1000) / areas[index],
   })).map(d => ({...d, value: parseFloat(d.value.toFixed(2))}));
 
-  // Placeholder for summary
   const caldoClarificado = {
     'Vazão (m³/h)': vazaoCaldo.toFixed(2),
     'Brix (%)': brixCaldo.toFixed(2),
@@ -74,7 +75,6 @@ export function performCalculations(data: EvaporationData): CalculatedData {
     summary: 'Indicadores chave de performance para o primeiro efeito.'
   };
 
-  // Placeholder for AI input
   const effects = {
     effect1: { vazao: vazaoCaldo, brix: brixEvolution[0].brix, eficiencia: effectEfficiency[0].efficiency, taxa_evaporacao: evaporationRate[0].rate, area: areaEfeito1, kg_vapor_m2: kgVaporPorM2[0].value },
     effect2: { brix: brixEvolution[1].brix, eficiencia: effectEfficiency[1].efficiency, taxa_evaporacao: evaporationRate[1].rate, area: areaEfeito2, kg_vapor_m2: kgVaporPorM2[1].value },
@@ -84,6 +84,24 @@ export function performCalculations(data: EvaporationData): CalculatedData {
   };
 
   const overallSummary = `Processo de evaporação operando com vazão de ${vazaoCaldo} m³/h e brix inicial de ${brixCaldo}%. O consumo total de vapor é ${consumoVaporTotal.toFixed(2)} t/h.`;
+
+  const effectsSummary: EffectSummaryData[] = brixEvolution.map((effect, index) => {
+    const brixIn = brixValues[index];
+    const brixOut = brixValues[index + 1];
+    const solidsIn = vazaoCaldo * densidadeCaldo * (brixIn / 100);
+    const vazaoCaldoOut = solidsIn / (densidadeCaldo * (brixOut / 100)); // Simplified
+    
+    return {
+        name: `Efeito ${index + 1}`,
+        brixIn: parseFloat(brixIn.toFixed(2)),
+        brixOut: parseFloat(brixOut.toFixed(2)),
+        vazaoCaldo: parseFloat(vazaoCaldo.toFixed(2)), // This should be calculated per effect
+        vaporGerado: parseFloat(vaporGeneration[index].generation.toFixed(2)),
+        taxaEvaporacao: parseFloat(evaporationRate[index].rate.toFixed(2)),
+        eficiencia: parseFloat(effectEfficiency[index].efficiency.toFixed(2)),
+    }
+  });
+
 
   return {
     densidadeCaldo,
@@ -97,5 +115,6 @@ export function performCalculations(data: EvaporationData): CalculatedData {
     desempenhoPrimeiroEfeito,
     effects,
     overallSummary,
+    effectsSummary,
   };
 }

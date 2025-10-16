@@ -16,11 +16,13 @@ const numberFromString = z.string().transform((val, ctx) => {
     return parsed;
 });
 
+// This will handle string, number, and empty string (by transforming to NaN and then being caught by refine)
 const numberFromStringOrNumber = z.union([
-    numberFromEmptyString,
     numberFromString,
     z.number(),
+    z.string().refine(s => s.trim() !== '', { message: "Campo obrigatório." }).transform(val => parseFloat(val.replace(',', '.')))
 ]).refine(val => !isNaN(val), { message: "Valor inválido." });
+
 
 const optionalNumberFromString = z.union([
     numberFromEmptyString,
@@ -65,6 +67,17 @@ export const formSchema = z.object({
 
 export type EvaporationData = z.infer<typeof formSchema>;
 
+export type EffectSummaryData = {
+  name: string;
+  brixIn: number;
+  brixOut: number;
+  vazaoCaldo: number;
+  vaporGerado: number;
+  taxaEvaporacao: number;
+  eficiencia: number;
+};
+
+
 export type CalculatedData = {
   densidadeCaldo: number;
   consumoVaporTotal: number;
@@ -83,6 +96,7 @@ export type CalculatedData = {
     effect5: Record<string, any>;
   };
   overallSummary: string;
+  effectsSummary: EffectSummaryData[];
 };
 
 export type AIEvaluations = {
@@ -92,5 +106,3 @@ export type AIEvaluations = {
   effect4Evaluation: string;
   effect5Evaluation: string;
 };
-
-    

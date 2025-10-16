@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,14 +16,11 @@ export default function SummaryTab() {
     );
   }
 
-  const { caldoClarificado, desempenhoPrimeiroEfeito, overallSummary } = calculatedData;
+  const { overallSummary, effectsSummary } = calculatedData;
   
-  const caldoClarificadoData = Object.entries(caldoClarificado).filter(([key]) => key !== 'summary');
-  const desempenhoData = Object.entries(desempenhoPrimeiroEfeito).filter(([key]) => key !== 'summary');
-
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
         <Card className="lg:col-span-3">
             <CardHeader>
                 <CardTitle>Resumo Geral da Evaporação</CardTitle>
@@ -33,46 +31,30 @@ export default function SummaryTab() {
         </Card>
         <Card>
             <CardHeader>
-            <CardTitle>Resumo do Caldo Clarificado</CardTitle>
-            <CardDescription>{caldoClarificado.summary}</CardDescription>
+            <CardTitle>Resumo Detalhado por Efeito</CardTitle>
+            <CardDescription>Dados de entrada e saída para cada efeito do sistema de evaporação.</CardDescription>
             </CardHeader>
             <CardContent>
             <Table>
                 <TableHeader>
-                <TableRow>
-                    <TableHead>Métrica</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                </TableRow>
+                  <TableRow>
+                      <TableHead>Efeito</TableHead>
+                      <TableHead className="text-right">Brix Entrada (%)</TableHead>
+                      <TableHead className="text-right">Brix Saída (%)</TableHead>
+                      <TableHead className="text-right">Vapor Gerado (t/h)</TableHead>
+                      <TableHead className="text-right">Taxa Evaporação (t/h)</TableHead>
+                      <TableHead className="text-right">Eficiência (%)</TableHead>
+                  </TableRow>
                 </TableHeader>
                 <TableBody>
-                {caldoClarificadoData.map(([key, value]) => (
-                    <TableRow key={key}>
-                    <TableCell className="font-medium">{key}</TableCell>
-                    <TableCell className="text-right">{value}</TableCell>
-                    </TableRow>
-                ))}
-                </TableBody>
-            </Table>
-            </CardContent>
-        </Card>
-        <Card>
-            <CardHeader>
-            <CardTitle>Resumo do Desempenho 1° Efeito</CardTitle>
-            <CardDescription>{desempenhoPrimeiroEfeito.summary}</CardDescription>
-            </CardHeader>
-            <CardContent>
-            <Table>
-                <TableHeader>
-                <TableRow>
-                    <TableHead>Métrica</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                </TableRow>
-                </TableHeader>
-                <TableBody>
-                {desempenhoData.map(([key, value]) => (
-                    <TableRow key={key}>
-                    <TableCell className="font-medium">{key}</TableCell>
-                    <TableCell className="text-right">{value}</TableCell>
+                {effectsSummary.map((effect) => (
+                    <TableRow key={effect.name}>
+                        <TableCell className="font-medium">{effect.name}</TableCell>
+                        <TableCell className="text-right">{effect.brixIn}</TableCell>
+                        <TableCell className="text-right">{effect.brixOut}</TableCell>
+                        <TableCell className="text-right">{effect.vaporGerado}</TableCell>
+                        <TableCell className="text-right">{effect.taxaEvaporacao}</TableCell>
+                        <TableCell className="text-right">{effect.eficiencia}</TableCell>
                     </TableRow>
                 ))}
                 </TableBody>
