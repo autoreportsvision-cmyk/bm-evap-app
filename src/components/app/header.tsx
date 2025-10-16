@@ -26,7 +26,9 @@ export default function AppHeader() {
       </div>
       {user && (
          <div className="flex items-center gap-4">
-          <span className="text-sm text-muted-foreground hidden sm:inline">{user.email}</span>
+          <span className="text-sm text-muted-foreground hidden sm:inline">
+            Olá {user.displayName}, seja bem vindo ao novo conceito de aprendizagem.
+          </span>
           <Button variant="outline" size="sm" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             Sair
