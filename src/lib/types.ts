@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 const numberFromString = z.string().transform((val, ctx) => {
@@ -27,7 +26,7 @@ const optionalNumberFromString = z.union([
   z.string().transform(v => v.trim() === '' ? undefined : parseFloat(v.replace(',', '.')))
 ]).refine(v => v === undefined || !isNaN(v), {
   message: 'Deve ser um número válido.',
-}).optional();
+}).optional().default(undefined);
 
 
 export const formSchema = z.object({
@@ -85,10 +84,13 @@ export type AIEvaluations = {
   generalEvaluation: string;
 };
 
-export type UserProfile = {
+export interface UserProfile {
   id: string;
   email: string | null;
   displayName: string | null;
   role: 'admin' | 'basic';
-  createdAt: Date;
-};
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  };
+}
