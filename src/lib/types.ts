@@ -95,15 +95,7 @@ export interface UserProfile {
   };
 }
 
-const MessageSchema = z.object({
-    role: z.enum(['user', 'model']),
-    content: z.string(),
-});
-
-export const ChatInputSchema = z.object({
-  history: z.array(MessageSchema),
-  message: z.string(),
-  processData: z.string(),
-});
-
-export type ChatInput = z.infer<typeof ChatInputSchema>;
+export type Message = {
+    role: 'user' | 'model';
+    content: string;
+};

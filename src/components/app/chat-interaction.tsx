@@ -10,7 +10,7 @@ import { Bot, Loader, Send } from 'lucide-react';
 import { useAppContext } from '@/context/app-context';
 import { getChatResponse } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import type { ChatInput, Message } from '@/lib/types';
+import type { Message } from '@/lib/types';
 
 
 export default function ChatInteraction() {
@@ -45,25 +45,20 @@ export default function ChatInteraction() {
     }
 
     const userMessage: Message = { role: 'user', content: input };
-    const newMessages: Message[] = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages(prev => [...prev, userMessage]);
     const currentInput = input;
     setInput('');
     setLoading(true);
 
-    const chatInput: ChatInput = {
-      // Send the history *before* the new user message
-      history: messages,
+    const result = await getChatResponse({
       message: currentInput,
       processData: JSON.stringify(calculatedData, null, 2),
-    };
-
-    const result = await getChatResponse(chatInput);
+    });
 
     setLoading(false);
 
     if (result.success && result.data) {
-      setMessages([...newMessages, { role: 'model', content: result.data }]);
+      setMessages(prev => [...prev, { role: 'model', content: result.data }]);
     } else {
       toast({
         variant: 'destructive',
@@ -71,7 +66,7 @@ export default function ChatInteraction() {
         description: result.error || 'Não foi possível obter uma resposta.',
       });
        // If the call fails, remove the user's message to allow them to try again
-       setMessages(messages);
+       setMessages(prev => prev.slice(0, -1));
     }
   };
 

@@ -4,7 +4,7 @@
 import { generateEffectEvaluations } from '@/ai/flows/generate-effect-evaluations';
 import type { GenerateEffectEvaluationsInput, GenerateEffectEvaluationsOutput } from '@/ai/flows/generate-effect-evaluations';
 import { chat } from '@/ai/flows/chat-flow';
-import type { ChatInput } from '@/lib/types';
+import type { ChatInput } from '@/ai/flows/chat-flow';
 
 
 export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
