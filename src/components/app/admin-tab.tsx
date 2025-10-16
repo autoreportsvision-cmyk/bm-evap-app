@@ -37,7 +37,6 @@ export default function AdminTab() {
       const usersRef = collection(firestore, 'users');
       // Firestore does not support case-insensitive queries directly on the server.
       // A common workaround is to store a searchable, lowercased version of the name.
-      // Since we don't have that, we query for the exact name, which will be case-sensitive.
       // For a better UX, one might query >= searchQuery and < searchQuery + '\uf8ff' to get prefix matches.
       const q = query(usersRef, where('displayName', '>=', searchQuery), where('displayName', '<=', searchQuery + '\uf8ff'));
       const querySnapshot = await getDocs(q);
