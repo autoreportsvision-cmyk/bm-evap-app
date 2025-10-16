@@ -1,68 +1,53 @@
-/**
- * @fileoverview Firestore Security Rules for BM_EVAPORAÇÃO application.
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for user profiles. Each user can only read and write their own data.
- *
- * Data Structure:
- * User profiles are stored in the `/users/{userId}` collection.
- *
- * Key Security Decisions:
- * - User listing is disallowed for security and privacy reasons. This prevents unauthorized enumeration of user accounts.
- * - Only authenticated users can access data. Anonymous users are treated the same as unauthenticated users and must still authenticate to access data.
- *
- * Denormalization for Authorization:
- * The `id` field within the `/users/{userId}` document must match the `userId` in the path to ensure ownership.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
     /**
-     * @description Enforces access control for user profiles.
-     * @path /databases/{database}/documents/users/{userId}
-     * @allow (get) Authenticated user can read their own profile.
-     *     - Request: `auth.uid: 'user123'`
-     *     - Path: `/databases/{database}/documents/users/user123`
-     * @allow (create) Authenticated user can create their own profile if the ID matches their UID.
-     *     - Request: `auth.uid: 'user123'`
-     *     - Path: `/databases/{database}/documents/users/user123`
-     *     - Data: `{id: 'user123', email: 'test@example.com', role: 'basic', createdAt: '2024-01-01T00:00:00Z'}`
-     * @allow (update) Authenticated user can update their own profile.
-     *     - Request: `auth.uid: 'user123'`
-     *     - Path: `/databases/{database}/documents/users/user123`
-     * @allow (delete) Authenticated user can delete their own profile.
-     *     - Request: `auth.uid: 'user123'`
-     *     - Path: `/databases/{database}/documents/users/user123`
-     * @deny (get) Authenticated user cannot read another user's profile.
-     *     - Request: `auth.uid: 'user456'`
-     *     - Path: `/databases/{database}/documents/users/user123`
-     * @deny (create) User cannot create a profile with an ID that doesn't match their UID.
-     *     - Request: `auth.uid: 'user123'`
-     *     - Path: `/databases/{database}/documents/users/user123`
-     *     - Data: `{id: 'user456', email: 'test@example.com', role: 'basic', createdAt: '2024-01-01T00:00:00Z'}`
-     * @principle Enforces document ownership for all operations.
+     * @description This ruleset enforces a strict user-ownership model for the /users/{userId} collection.
+     *              Each user can only read and write their own profile data. Listing all users is disallowed.
+     * @path /users/{userId}
+     * @allow (get) - Authenticated user can read their own profile.
+     *               Example: request.auth.uid == 'user123'
+     * @allow (create) - Authenticated user can create their own profile.
+     *                  Example: request.auth.uid == 'user123' and request.resource.data.id == 'user123'
+     * @allow (update) - Authenticated user can update their own profile.
+     *                  Example: request.auth.uid == 'user123' and resource.data.id == 'user123'
+     * @allow (delete) - Authenticated user can delete their own profile.
+     *                  Example: request.auth.uid == 'user123' and resource.data.id == 'user123'
+     * @deny (get) - Authenticated user cannot read another user's profile.
+     *               Example: request.auth.uid == 'user456' trying to read /users/user123
+     * @deny (create) - Unauthenticated user attempts to create a profile.
+     *                  Example: request.auth == null
+     * @deny (update) - Authenticated user cannot update another user's profile.
+     *                  Example: request.auth.uid == 'user456' trying to update /users/user123
+     * @deny (delete) - Authenticated user cannot delete another user's profile.
+     *                  Example: request.auth.uid == 'user456' trying to delete /users/user123
+     * @principle Enforces document ownership for all read and write operations.
      */
     match /users/{userId} {
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if false; // Disallowing listing for security reasons
+      // Helper function to check if the request is made by the owner of the user document.
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
 
-      allow create: if isSignedIn() && request.resource.data.id == userId;
-      allow update: if isSignedIn() && isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-      allow delete: if isSignedIn() && isExistingOwner(userId);
-    }
-
-    // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    function isExistingOwner(userId) {
+      // Helper function to check if the user exists and is the owner
+      function isExistingOwner(userId) {
         return isOwner(userId) && resource != null;
+      }
+
+      // Allow authenticated users to read their own profile
+      allow get: if isOwner(userId);
+
+      // Prevent listing of all users
+      allow list: if false;
+
+      // Allow creation of user profile if the user is authenticated and the user ID matches the document ID
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+
+      // Allow updates if the user is authenticated and the user ID matches the document ID, also ensure immutability of userId
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+
+      // Allow deletion if the user is authenticated and is the owner
+      allow delete: if isExistingOwner(userId);
     }
   }
 }
