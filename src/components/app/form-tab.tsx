@@ -173,6 +173,59 @@ export default function FormTab() {
                 </div>
              </div>
           </div>
+
+          <Separator />
+
+           <div className="space-y-4">
+            <h3 className="text-lg font-medium">Área de Troca Térmica por Efeito (m²)</h3>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="areaEfeito1">Efeito 1</Label>
+                    <Controller
+                        name="areaEfeito1"
+                        control={control}
+                        render={({ field }) => <Input id="areaEfeito1" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
+                    />
+                    {errors.areaEfeito1 && <p className="text-destructive text-xs">{errors.areaEfeito1.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="areaEfeito2">Efeito 2</Label>
+                    <Controller
+                        name="areaEfeito2"
+                        control={control}
+                        render={({ field }) => <Input id="areaEfeito2" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
+                    />
+                    {errors.areaEfeito2 && <p className="text-destructive text-xs">{errors.areaEfeito2.message}</p>}
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="areaEfeito3">Efeito 3</Label>
+                    <Controller
+                        name="areaEfeito3"
+                        control={control}
+                        render={({ field }) => <Input id="areaEfeito3" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
+                    />
+                    {errors.areaEfeito3 && <p className="text-destructive text-xs">{errors.areaEfeito3.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="areaEfeito4">Efeito 4</Label>
+                    <Controller
+                        name="areaEfeito4"
+                        control={control}
+                        render={({ field }) => <Input id="areaEfeito4" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
+                    />
+                    {errors.areaEfeito4 && <p className="text-destructive text-xs">{errors.areaEfeito4.message}</p>}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="areaEfeito5">Efeito 5</Label>
+                    <Controller
+                        name="areaEfeito5"
+                        control={control}
+                        render={({ field }) => <Input id="areaEfeito5" type="number" step="any" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : parseFloat(e.target.value))} />}
+                    />
+                    {errors.areaEfeito5 && <p className="text-destructive text-xs">{errors.areaEfeito5.message}</p>}
+                </div>
+             </div>
+          </div>
           
           <Separator />
           

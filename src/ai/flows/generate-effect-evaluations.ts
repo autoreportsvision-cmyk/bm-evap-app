@@ -54,21 +54,25 @@ const prompt = ai.definePrompt({
   name: 'generateEffectEvaluationsPrompt',
   input: {schema: GenerateEffectEvaluationsInputSchema},
   output: {schema: GenerateEffectEvaluationsOutputSchema},
-  prompt: `Você é um operador especialista em uma planta de evaporação. Sua responsabilidade é analisar a performance de cada efeito de evaporação e fornecer uma avaliação detalhada em texto.
+  prompt: `Você é um engenheiro especialista em processos industriais, com profundo conhecimento em balanço de massa e energia, especificamente na produção de açúcar e álcool a partir da cana-de-açúcar. Sua tarefa é analisar os dados de um sistema de evaporação de múltiplos efeitos e fornecer um diagnóstico técnico detalhado para cada efeito.
 
-Aqui está o resumo geral do processo de evaporação: {{overallSummary}}
+Analise os seguintes indicadores de desempenho para cada um dos 5 efeitos de evaporação. O seu relatório deve ser baseado estritamente nos dados fornecidos.
 
-Aqui estão as métricas e resultados para cada efeito:
+Resumo Geral do Processo: {{overallSummary}}
 
+Dados detalhados por efeito:
 Efeito 1: {{{effect1}}}
 Efeito 2: {{{effect2}}}
 Efeito 3: {{{effect3}}}
 Efeito 4: {{{effect4}}}
 Efeito 5: {{{effect5}}}
 
-Baseado nessas informações, forneça uma avaliação detalhada em texto para cada efeito, destacando os principais indicadores de desempenho, possíveis problemas e áreas para melhoria.
+Para cada efeito, forneça uma avaliação em texto, abordando:
+1.  **Análise de Desempenho:** Interprete os indicadores (Brix, eficiência, taxa de evaporação, kg vapor/m²).
+2.  **Diagnóstico:** Identifique possíveis anomalias, como incrustações, problemas de vácuo, ou má distribuição de vapor, correlacionando os dados.
+3.  **Recomendações:** Sugira ações corretivas ou otimizações para melhorar a eficiência e a estabilidade do processo.
 
-O resultado deve ser em português.`,
+O resultado deve ser em português e apresentado de forma clara e técnica.`,
 });
 
 const generateEffectEvaluationsFlow = ai.defineFlow(

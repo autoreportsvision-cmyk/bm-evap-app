@@ -13,6 +13,11 @@ export const formSchema = z.object({
   brixEfeito3: z.number({ required_error: 'Brix é obrigatório.' }).min(0, 'Brix não pode ser negativo.'),
   brixEfeito4: z.number({ required_error: 'Brix é obrigatório.' }).min(0, 'Brix não pode ser negativo.'),
   brixEfeito5: z.number({ required_error: 'Brix é obrigatório.' }).min(0, 'Brix não pode ser negativo.'),
+  areaEfeito1: z.number({ required_error: 'Área é obrigatória.' }).min(0, 'Área não pode ser negativa.'),
+  areaEfeito2: z.number({ required_error: 'Área é obrigatória.' }).min(0, 'Área não pode ser negativa.'),
+  areaEfeito3: z.number({ required_error: 'Área é obrigatória.' }).min(0, 'Área não pode ser negativa.'),
+  areaEfeito4: z.number({ required_error: 'Área é obrigatória.' }).min(0, 'Área não pode ser negativa.'),
+  areaEfeito5: z.number({ required_error: 'Área é obrigatória.' }).min(0, 'Área não pode ser negativa.'),
 }).refine(data => {
     if (data.preAquecimento) {
         return data.tempEntradaAquec !== undefined && data.tempSaidaAquec !== undefined;
@@ -32,6 +37,7 @@ export type CalculatedData = {
   effectEfficiency: { name: string; efficiency: number }[];
   evaporationRate: { name: string; rate: number }[];
   vaporGeneration: { name: string; generation: number }[];
+  kgVaporPorM2: { name: string; value: number }[];
   caldoClarificado: Record<string, any>;
   desempenhoPrimeiroEfeito: Record<string, any>;
   effects: {

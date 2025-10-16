@@ -13,4 +13,9 @@ export const INITIAL_FORM_DATA: EvaporationData = {
   brixEfeito3: 28.5,
   brixEfeito4: 37.5,
   brixEfeito5: 65,
+  areaEfeito1: 1000,
+  areaEfeito2: 1000,
+  areaEfeito3: 1000,
+  areaEfeito4: 800,
+  areaEfeito5: 800,
 };
