@@ -21,7 +21,15 @@ export default function AdminTab() {
 
   const { data: users, isLoading } = useCollection<UserProfile>(usersCollectionRef);
 
-  const handleRoleChange = (userId: string, role: 'admin' | 'basic') => {
+  const handleRoleChange = (userId: string, role: 'admin' | 'basic' | 'premium') => {
+    if (role === 'admin') {
+      toast({
+        variant: 'destructive',
+        title: 'Aviso',
+        description: 'A função de administrador não pode ser definida pela interface.',
+      });
+      return;
+    }
     const userRef = doc(firestore, 'users', userId);
     setDocumentNonBlocking(userRef, { role }, { merge: true });
     toast({
@@ -56,13 +64,13 @@ export default function AdminTab() {
                 <TableCell className="font-medium">{user.email}</TableCell>
                 <TableCell>{user.createdAt?.seconds ? new Date(user.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}</TableCell>
                 <TableCell className="text-right">
-                  <Select value={user.role} onValueChange={(value) => handleRoleChange(user.id, value as 'admin' | 'basic')}>
-                    <SelectTrigger className="w-[120px]">
+                  <Select value={user.role} onValueChange={(value) => handleRoleChange(user.id, value as 'admin' | 'basic' | 'premium')}>
+                    <SelectTrigger className="w-[120px]" disabled={user.role === 'admin'}>
                       <SelectValue placeholder="Definir permissão" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="basic">Básico</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="premium">Premium</SelectItem>
                     </SelectContent>
                   </Select>
                 </TableCell>

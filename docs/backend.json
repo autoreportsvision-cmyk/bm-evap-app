@@ -23,7 +23,7 @@
         "role": {
           "type": "string",
           "description": "The user's role in the application.",
-          "enum": ["admin", "basic"]
+          "enum": ["admin", "basic", "premium"]
         },
         "createdAt": {
           "type": "string",

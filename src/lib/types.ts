@@ -88,7 +88,7 @@ export interface UserProfile {
   id: string;
   email: string | null;
   displayName: string | null;
-  role: 'admin' | 'basic';
+  role: 'admin' | 'basic' | 'premium';
   createdAt: {
     seconds: number;
     nanoseconds: number;
