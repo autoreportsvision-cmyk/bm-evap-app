@@ -9,10 +9,14 @@ import { Bot, Loader, Share2 } from 'lucide-react';
 import { getAiEvaluations } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import WhatsAppIcon from '@/components/icons/whatsapp-icon';
+import { Textarea } from '../ui/textarea';
+import { DEFAULT_AI_PROMPT } from '@/lib/constants';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
 export default function EvaluationsTab() {
   const { calculatedData, aiEvaluations, setAiEvaluations, isCalculated } = useAppContext();
   const [loading, setLoading] = useState(false);
+  const [prompt, setPrompt] = useState(DEFAULT_AI_PROMPT);
   const { toast } = useToast();
 
   const handleGenerateEvaluations = async () => {
@@ -24,6 +28,15 @@ export default function EvaluationsTab() {
       });
       return;
     }
+    if (!prompt) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'O prompt da IA não pode estar vazio.',
+      });
+      return;
+    }
+
     setLoading(true);
 
     const effectsPayload = calculatedData.effectsSummary.reduce((acc, effect, index) => {
@@ -44,6 +57,7 @@ export default function EvaluationsTab() {
     const result = await getAiEvaluations({
       ...effectsPayload,
       overallSummary: calculatedData.overallSummary,
+      prompt: prompt,
     });
     setLoading(false);
 
@@ -78,46 +92,73 @@ export default function EvaluationsTab() {
   const generalEvaluation = aiEvaluations?.generalEvaluation;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-            <div>
-                <CardTitle>Avaliação Geral do Processo (IA)</CardTitle>
-                <CardDescription>Análise consolidada do desempenho do sistema de evaporação gerada por IA.</CardDescription>
-            </div>
-            <div className="flex flex-shrink-0 gap-2">
-                 <Button onClick={() => handleShare(generalEvaluation || '')} disabled={!generalEvaluation}>
-                    <WhatsAppIcon className="h-4 w-4" />
-                    <span>Compartilhar Relatório</span>
-                </Button>
-                <Button onClick={handleGenerateEvaluations} disabled={!isCalculated || loading}>
-                    {loading ? <Loader className="animate-spin" /> : <Bot />}
-                    <span>{aiEvaluations ? 'Regerar' : 'Gerar Avaliação'}</span>
-                </Button>
-            </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {!isCalculated ? (
-          <div className="flex items-center justify-center h-48 text-muted-foreground">
-            Preencha o formulário para gerar a avaliação.
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+              <div>
+                  <CardTitle>Avaliação Geral do Processo (IA)</CardTitle>
+                  <CardDescription>Análise consolidada do desempenho do sistema de evaporação gerada por IA.</CardDescription>
+              </div>
+              <div className="flex flex-shrink-0 gap-2">
+                   <Button onClick={() => handleShare(generalEvaluation || '')} disabled={!generalEvaluation}>
+                      <WhatsAppIcon className="h-4 w-4" />
+                      <span>Compartilhar Relatório</span>
+                  </Button>
+                  <Button onClick={handleGenerateEvaluations} disabled={!isCalculated || loading}>
+                      {loading ? <Loader className="animate-spin" /> : <Bot />}
+                      <span>{aiEvaluations ? 'Regerar' : 'Gerar Avaliação'}</span>
+                  </Button>
+              </div>
           </div>
-        ) : loading ? (
-           <div className="flex items-center justify-center h-48">
-             <Loader className="h-8 w-8 animate-spin text-primary" />
-           </div>
-        ) : generalEvaluation ? (
-           <div
-              className="whitespace-pre-wrap rounded-md border bg-background p-4 overflow-auto text-base"
-              dangerouslySetInnerHTML={{ __html: generalEvaluation.replace(/\n/g, '<br />') }}
-            >
+        </CardHeader>
+        <CardContent>
+          {!isCalculated ? (
+            <div className="flex items-center justify-center h-48 text-muted-foreground">
+              Preencha o formulário para gerar a avaliação.
             </div>
-        ) : (
-          <div className="flex items-center justify-center h-48 text-muted-foreground">
-            Clique em "Gerar Avaliação" para ver a análise da IA.
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          ) : loading ? (
+             <div className="flex items-center justify-center h-48">
+               <Loader className="h-8 w-8 animate-spin text-primary" />
+             </div>
+          ) : generalEvaluation ? (
+             <div
+                className="whitespace-pre-wrap rounded-md border bg-background p-4 overflow-auto text-base"
+                dangerouslySetInnerHTML={{ __html: generalEvaluation.replace(/\n/g, '<br />') }}
+              >
+              </div>
+          ) : (
+            <div className="flex items-center justify-center h-48 text-muted-foreground">
+              Clique em "Gerar Avaliação" para ver a análise da IA.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+      
+      <Accordion type="single" collapsible>
+        <AccordionItem value="item-1">
+          <AccordionTrigger>Editar Prompt da IA</AccordionTrigger>
+          <AccordionContent>
+            <Card>
+              <CardHeader>
+                <CardTitle>Prompt da IA</CardTitle>
+                <CardDescription>
+                  Altere o prompt abaixo para customizar a análise gerada pela inteligência artificial. 
+                  As variáveis como `${'${input.currentDate}'}` e `${'${input.overallSummary}'}` serão substituídas pelos dados do processo.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Textarea 
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  className="h-96 w-full text-xs"
+                />
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
+    </div>
   );
 }

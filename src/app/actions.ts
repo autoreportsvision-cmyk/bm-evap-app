@@ -4,7 +4,7 @@
 import { generateEffectEvaluations } from '@/ai/flows/generate-effect-evaluations';
 import type { GenerateEffectEvaluationsInput, GenerateEffectEvaluationsOutput } from '@/ai/flows/generate-effect-evaluations';
 
-export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
+export async function getAiEvaluations(input: GenerateEffectEvaluationsInput & { prompt: string }): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
   try {
     const evaluations = await generateEffectEvaluations(input);
     return { success: true, data: evaluations };
