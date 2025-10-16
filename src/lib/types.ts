@@ -93,6 +93,10 @@ export interface UserProfile {
     seconds: number;
     nanoseconds: number;
   };
+  accessExpiration?: { // Added optional accessExpiration field
+    seconds: number;
+    nanoseconds: number;
+  } | Date;
 }
 
 export type Message = {

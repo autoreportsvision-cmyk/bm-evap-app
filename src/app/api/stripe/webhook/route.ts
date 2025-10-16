@@ -8,11 +8,20 @@ import { firestoreAdmin } from '@/firebase/admin';
 // This is your Stripe CLI webhook secret for testing your endpoint locally.
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-async function updateUserRole(userId: string, newRole: 'premium' | 'basic') {
+async function updateUserRoleWithExpiration(userId: string) {
     try {
         const userRef = firestoreAdmin.collection('users').doc(userId);
-        await userRef.update({ role: newRole });
-        console.log(`User role updated: ${userId} to ${newRole}`);
+        
+        // Calculate expiration date (1 year from now)
+        const now = new Date();
+        const expirationDate = new Date(now.setFullYear(now.getFullYear() + 1));
+
+        await userRef.update({ 
+            role: 'premium',
+            accessExpiration: expirationDate, // Set the expiration date
+        });
+
+        console.log(`User role updated to premium for ${userId} with expiration on ${expirationDate.toISOString()}`);
         return { success: true };
     } catch (error) {
         console.error(`Error updating user role for ${userId}:`, error);
@@ -37,13 +46,11 @@ export async function POST(req: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
       
-      // For one-time payments, we check the payment status.
-      // For subscriptions, we would check the subscription status.
       if (session.payment_status === 'paid') {
         const userId = session.metadata?.userId;
         if (userId) {
           console.log(`Checkout session completed and paid for user: ${userId}`);
-          await updateUserRole(userId, 'premium');
+          await updateUserRoleWithExpiration(userId);
         } else {
           console.error('Webhook received checkout.session.completed without userId in metadata.');
         }
@@ -53,13 +60,6 @@ export async function POST(req: NextRequest) {
       break;
     }
     
-    // The subscription events are no longer needed for a one-time payment model.
-    // case 'customer.subscription.deleted':
-    // case 'customer.subscription.updated': {
-    //     // This logic is for subscriptions, can be removed or adapted if you have other subscription types.
-    //     break;
-    // }
-
     default:
       console.log(`Unhandled event type ${event.type}`);
   }

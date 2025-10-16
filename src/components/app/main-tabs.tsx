@@ -29,7 +29,24 @@ export default function MainTabs() {
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const isAdmin = userProfile?.role === 'admin';
-  const isPremium = userProfile?.role === 'premium' || userProfile?.role === 'admin';
+  
+  let isPremium = false;
+  if (userProfile) {
+    if (userProfile.role === 'admin') {
+      isPremium = true;
+    } else if (userProfile.role === 'premium' && userProfile.accessExpiration) {
+      // The 'accessExpiration' can be a Firestore Timestamp object or a Date object
+      // depending on whether it comes from the server or was just set on the client.
+      const expirationDate = (userProfile.accessExpiration as any).seconds 
+        ? new Date((userProfile.accessExpiration as any).seconds * 1000)
+        : userProfile.accessExpiration as Date;
+        
+      if (expirationDate > new Date()) {
+        isPremium = true;
+      }
+    }
+  }
+
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
