@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -19,6 +19,16 @@ export default function ChatInteraction() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTo({
+        top: scrollAreaRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }, [messages, loading]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +52,8 @@ export default function ChatInteraction() {
     setLoading(true);
 
     const chatInput: ChatInput = {
-      history: messages, // Send the history *before* the new message
+      // Send the history *before* the new user message
+      history: messages,
       message: currentInput,
       processData: JSON.stringify(calculatedData, null, 2),
     };
@@ -59,7 +70,7 @@ export default function ChatInteraction() {
         title: 'Erro na IA',
         description: result.error || 'Não foi possível obter uma resposta.',
       });
-       // Restore the user message if the call fails
+       // If the call fails, remove the user's message to allow them to try again
        setMessages(messages);
     }
   };
@@ -83,7 +94,7 @@ export default function ChatInteraction() {
         <CardDescription>Faça perguntas sobre os dados do processo de evaporação.</CardDescription>
       </CardHeader>
       <CardContent className="flex-grow flex flex-col gap-4 overflow-hidden">
-        <ScrollArea className="flex-grow pr-4">
+        <ScrollArea className="flex-grow pr-4" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.map((message, index) => (
               <div
