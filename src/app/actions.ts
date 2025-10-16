@@ -53,7 +53,7 @@ export async function createCheckoutSession(
           quantity: 1,
         },
       ],
-      mode: 'subscription',
+      mode: 'payment',
       success_url: `${origin}/`,
       cancel_url: `${origin}/pricing`,
       metadata: {

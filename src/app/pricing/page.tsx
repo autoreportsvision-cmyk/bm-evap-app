@@ -75,8 +75,8 @@ export default function PricingPage() {
         </CardHeader>
         <CardContent className="space-y-6">
             <div className="space-y-2 text-center">
-                <p className="text-4xl font-bold">R$ 49,90<span className="text-lg font-normal text-muted-foreground">/mês</span></p>
-                <p className="text-xs text-muted-foreground">Cancele a qualquer momento.</p>
+                <p className="text-4xl font-bold">R$ 49,90</p>
+                <p className="text-xs text-muted-foreground">Pagamento único. Acesso vitalício.</p>
             </div>
             <ul className="space-y-3 text-sm">
                 <li className="flex items-center gap-2">
@@ -103,7 +103,7 @@ export default function PricingPage() {
         </CardContent>
         <CardFooter>
             <Button className="w-full" onClick={handleSubscribe} disabled={isUserLoading || loading}>
-                {loading ? <Loader className="animate-spin" /> : 'Assinar Agora'}
+                {loading ? <Loader className="animate-spin" /> : 'Comprar Acesso'}
             </Button>
         </CardFooter>
       </Card>
