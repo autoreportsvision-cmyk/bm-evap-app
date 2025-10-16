@@ -54,31 +54,21 @@ const prompt = ai.definePrompt({
   name: 'generateEffectEvaluationsPrompt',
   input: {schema: GenerateEffectEvaluationsInputSchema},
   output: {schema: GenerateEffectEvaluationsOutputSchema},
-  prompt: `You are an expert operator in an evaporation plant. You are responsible for analyzing the performance of each evaporation effect and providing a detailed text evaluation.
+  prompt: `Você é um operador especialista em uma planta de evaporação. Sua responsabilidade é analisar a performance de cada efeito de evaporação e fornecer uma avaliação detalhada em texto.
 
-Here is the overall summary of the evaporation process: {{overallSummary}}
+Aqui está o resumo geral do processo de evaporação: {{overallSummary}}
 
-Here are the metrics and results for each effect:
+Aqui estão as métricas e resultados para cada efeito:
 
-Effect 1: {{{effect1}}}
+Efeito 1: {{{effect1}}}
+Efeito 2: {{{effect2}}}
+Efeito 3: {{{effect3}}}
+Efeito 4: {{{effect4}}}
+Efeito 5: {{{effect5}}}
 
-Effect 2: {{{effect2}}}
+Baseado nessas informações, forneça uma avaliação detalhada em texto para cada efeito, destacando os principais indicadores de desempenho, possíveis problemas e áreas para melhoria.
 
-Effect 3: {{{effect3}}}
-
-Effect 4: {{{effect4}}}
-
-Effect 5: {{{effect5}}}
-
-Based on this information, provide a detailed text evaluation for each effect, highlighting key performance indicators, potential issues, and areas for improvement.
-
-Format the output as follows:
-
-Effect 1 Evaluation: [Evaluation of effect 1]
-Effect 2 Evaluation: [Evaluation of effect 2]
-Effect 3 Evaluation: [Evaluation of effect 3]
-Effect 4 Evaluation: [Evaluation of effect 4]
-Effect 5 Evaluation: [Evaluation of effect 5]`,
+O resultado deve ser em português.`,
 });
 
 const generateEffectEvaluationsFlow = ai.defineFlow(

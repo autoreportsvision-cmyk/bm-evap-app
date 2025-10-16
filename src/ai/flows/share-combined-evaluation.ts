@@ -32,12 +32,12 @@ const prompt = ai.definePrompt({
   name: 'shareCombinedEvaluationPrompt',
   input: {schema: ShareCombinedEvaluationInputSchema},
   output: {schema: ShareCombinedEvaluationOutputSchema},
-  prompt: `You are an expert in summarizing technical data related to evaporation processes.  Create a concise, easy-to-understand summary for sharing via WhatsApp.
+  prompt: `Você é um especialista em resumir dados técnicos relacionados a processos de evaporação. Crie um resumo conciso e de fácil compreensão para ser compartilhado via WhatsApp.
 
-Clarified Juice: {{{clarifiedJuice}}}
-First Effect Performance: {{{firstEffectPerformance}}}
+Caldo Clarificado: {{{clarifiedJuice}}}
+Desempenho do Primeiro Efeito: {{{firstEffectPerformance}}}
 
-Combine the above information into a single paragraph suitable for sharing with team members. Focus on the overall performance and key takeaways.`,
+Combine as informações acima em um único parágrafo adequado para compartilhar com os membros da equipe. Foque no desempenho geral e nos pontos principais. O resultado deve ser em português.`,
 });
 
 const shareCombinedEvaluationFlow = ai.defineFlow(
