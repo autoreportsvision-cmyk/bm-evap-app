@@ -80,7 +80,7 @@ export default function LoginPage() {
       let description = 'Ocorreu um erro desconhecido. Tente novamente.';
       if (error.code === 'auth/email-already-in-use') {
         description = 'Este e-mail já está em uso. Tente fazer login ou use um e-mail diferente.';
-      } else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+      } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
         description = 'E-mail ou senha incorretos. Por favor, verifique suas credenciais.';
       } else if (error.message) {
         description = error.message;
