@@ -13,12 +13,30 @@ import { Textarea } from '../ui/textarea';
 import { DEFAULT_AI_PROMPT } from '@/lib/constants';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import ChatInteraction from './chat-interaction';
+import { useUser, useFirestore } from '@/firebase';
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { useMemoFirebase } from '@/firebase/provider';
+import { doc } from 'firebase/firestore';
+import type { UserProfile } from '@/lib/types';
+
 
 export default function EvaluationsTab() {
   const { calculatedData, aiEvaluations, setAiEvaluations, isCalculated } = useAppContext();
   const [loading, setLoading] = useState(false);
   const [prompt, setPrompt] = useState(DEFAULT_AI_PROMPT);
   const { toast } = useToast();
+
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
+
+  const isAdmin = userProfile?.role === 'admin';
 
   const handleGenerateEvaluations = async () => {
     if (!calculatedData) {
@@ -136,28 +154,30 @@ export default function EvaluationsTab() {
         </CardContent>
       </Card>
       
-      <Accordion type="single" collapsible>
-        <AccordionItem value="item-1">
-          <AccordionTrigger>Editar Prompt da IA</AccordionTrigger>
-          <AccordionContent>
-            <Card>
-              <CardHeader>
-                <CardTitle>Prompt da IA</CardTitle>
-                <CardDescription>
-                  Altere o prompt abaixo para customizar a análise gerada pela inteligência artificial. 
-                  As variáveis como `${'${input.currentDate}'}` e `${'${input.overallSummary}'}` serão substituídas pelos dados do processo.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Textarea 
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  className="h-96 w-full text-xs"
-                />
-              </CardContent>
-            </Card>
-          </AccordionContent>
-        </AccordionItem>
+      <Accordion type="single" collapsible className="w-full">
+        {isAdmin && (
+            <AccordionItem value="item-1">
+            <AccordionTrigger>Editar Prompt da IA</AccordionTrigger>
+            <AccordionContent>
+                <Card>
+                <CardHeader>
+                    <CardTitle>Prompt da IA</CardTitle>
+                    <CardDescription>
+                    Altere o prompt abaixo para customizar a análise gerada pela inteligência artificial. 
+                    As variáveis como `${'${input.currentDate}'}` e `${'${input.overallSummary}'}` serão substituídas pelos dados do processo.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Textarea 
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    className="h-96 w-full text-xs"
+                    />
+                </CardContent>
+                </Card>
+            </AccordionContent>
+            </AccordionItem>
+        )}
         <AccordionItem value="item-2">
           <AccordionTrigger>Conversar com a IA sobre os dados</AccordionTrigger>
           <AccordionContent>

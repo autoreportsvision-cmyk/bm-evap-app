@@ -10,12 +10,8 @@ import { Bot, Loader, Send } from 'lucide-react';
 import { useAppContext } from '@/context/app-context';
 import { getChatResponse } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
-import type { ChatInput } from '@/lib/types';
+import type { ChatInput, Message } from '@/lib/types';
 
-type Message = {
-  role: 'user' | 'model';
-  content: string;
-};
 
 export default function ChatInteraction() {
   const { calculatedData, isCalculated } = useAppContext();
@@ -26,24 +22,26 @@ export default function ChatInteraction() {
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || !calculatedData) {
-        if (!calculatedData) {
-            toast({
-                variant: 'destructive',
-                title: 'Dados não encontrados',
-                description: 'Por favor, calcule os dados no formulário primeiro.'
-            });
-        }
+    if (!input.trim()) {
+        return;
+    }
+    if (!calculatedData) {
+        toast({
+            variant: 'destructive',
+            title: 'Dados não encontrados',
+            description: 'Por favor, calcule os dados no formulário primeiro.'
+        });
         return;
     }
 
-    const newMessages: Message[] = [...messages, { role: 'user', content: input }];
+    const userMessage: Message = { role: 'user', content: input };
+    const newMessages: Message[] = [...messages, userMessage];
     setMessages(newMessages);
     setInput('');
     setLoading(true);
 
     const chatInput: ChatInput = {
-      history: newMessages.slice(0, -1),
+      history: messages, // Send the history *before* the new message
       message: input,
       processData: JSON.stringify(calculatedData, null, 2),
     };
