@@ -25,43 +25,29 @@ type FormTabProps = {
 
 
 export default function FormTab({ onCalculate }: FormTabProps) {
-  const { formData, setFormData, setCalculatedData, setIsCalculated, isCalculated } = useAppContext();
+  const { formData, setFormData, setCalculatedData, setIsCalculated } = useAppContext();
   const { toast } = useToast();
 
   const form = useForm<EvaporationData>({
     resolver: zodResolver(formSchema),
-    defaultValues: isCalculated ? formData : INITIAL_FORM_DATA,
+    defaultValues: formData,
     mode: 'onBlur',
   });
 
   const { control, handleSubmit, watch, reset, formState: { errors } } = form;
 
   useEffect(() => {
-    if (isCalculated) {
-      // Stringify numbers to reset form with correct types
-      const stringifiedData: { [key: string]: any } = {};
-      for (const key in formData) {
-          const value = (formData as any)[key];
-          if (typeof value === 'number') {
-              stringifiedData[key] = String(value);
-          } else {
-              stringifiedData[key] = value;
-          }
-      }
-      reset(stringifiedData as EvaporationData);
-    } else {
-      reset(INITIAL_FORM_DATA);
-    }
-  }, [isCalculated, formData, reset]);
+    reset(formData);
+  }, [formData, reset]);
 
 
   const preAquecimento = watch('preAquecimento');
   
   const onSubmit = (data: EvaporationData) => {
     try {
-      const parsedData = formSchema.parse(data);
-      setFormData(parsedData);
-      const results = performCalculations(parsedData);
+      // Zod already returns parsed numbers, so no need for formSchema.parse(data) again if using RHF with zodResolver
+      setFormData(data);
+      const results = performCalculations(data);
       setCalculatedData(results);
       setIsCalculated(true);
       onCalculate();
@@ -75,10 +61,6 @@ export default function FormTab({ onCalculate }: FormTabProps) {
     }
   };
 
-  const handleFormSubmit = () => {
-    handleSubmit(onSubmit)();
-  };
-
   return (
     <Card>
       <CardHeader>
@@ -86,7 +68,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
         <CardDescription>Insira os dados do processo para calcular o desempenho da evaporação.</CardDescription>
       </CardHeader>
       <CardContent>
-        <form onSubmit={(e) => { e.preventDefault(); handleFormSubmit(); }} className="space-y-6">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="vazaoCaldo">Vazão Caldo (m³/h)</Label>
@@ -285,5 +267,3 @@ export default function FormTab({ onCalculate }: FormTabProps) {
     </Card>
   );
 }
-
-    

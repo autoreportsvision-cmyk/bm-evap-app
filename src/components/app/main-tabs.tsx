@@ -20,7 +20,7 @@ export default function MainTabs() {
         </TabsTrigger>
         <TabsTrigger value="dashboard">
           <LayoutDashboard className="mr-2 h-4 w-4" />
-          Painel
+          Dashboard
         </TabsTrigger>
         <TabsTrigger value="summary">
           <FileText className="mr-2 h-4 w-4" />
