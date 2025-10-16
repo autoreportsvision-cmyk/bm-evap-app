@@ -5,7 +5,7 @@ const numberFromString = z.string().transform((val, ctx) => {
         // Permite campos vazios inicialmente, mas a validação de regra refinará isso.
         return NaN;
     }
-    const parsed = parseFloat(val);
+    const parsed = parseFloat(val.replace(',', '.'));
     if (isNaN(parsed)) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
