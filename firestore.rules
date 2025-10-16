@@ -1,64 +1,51 @@
 /**
- * @fileoverview Firestore Security Rules for BM_EVAPORAÇÃO application.
+ * @file Firestore Security Rules for BM_EVAPORAÇÃO.
  *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for user profiles.
- * Only authenticated users can read and write their own profile data.
- * Listing of all users is explicitly denied for privacy.
+ * @corePhilosophy This ruleset enforces a strict user-ownership model for user profiles.
+ *   Only the authenticated user can read or write their own profile data. Listing all users is disallowed.
  *
- * Data Structure:
- * User profiles are stored under the `/users/{userId}` path, where `{userId}`
- * corresponds to the Firebase Authentication UID.
+ * @dataStructure User profiles are stored under the `/users/{userId}` path,
+ *   where `{userId}` corresponds to the Firebase Authentication UID.
  *
- * Key Security Decisions:
- * - User listing is disallowed.
- * - Only authenticated users can access their own data.
- * - Data validation is relaxed in prototyping mode to enable rapid schema iteration.
- *
- * Denormalization for Authorization:
- *  The `/users/{userId}` path inherently ties user documents to their
- *  Authentication UID, eliminating the need for denormalized `ownerId`
- *  fields within the documents. The `isOwner()` function leverages this
- *  path-based ownership.
- *
- * Structural Segregation:
- *  The application does not require public data or content, so no structural
- *  segregation (e.g., private vs. public collections) is needed.
+ * @keySecurityDecisions Listing all users is explicitly denied. This prevents
+ *   unauthorized access to user data.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Enforces access control for user profiles.
+     * @description Controls access to individual user documents.
      * @path /databases/{database}/documents/users/{userId}
-     * @allow (create) - Authenticated user with UID 'MEC7gPjrhTcs0YNWjl2I3nByM462' can create their own profile.
-     * @allow (get) - Authenticated user with UID 'MEC7gPjrhTcs0YNWjl2I3nByM462' can read their own profile.
-     * @allow (update) - Authenticated user with UID 'MEC7gPjrhTcs0YNWjl2I3nByM462' can update their own profile.
-     * @allow (delete) - Authenticated user with UID 'MEC7gPjrhTcs0YNWjl2I3nByM462' can delete their own profile.
-     * @deny (create) - Authenticated user with UID 'OTHER_UID' cannot create a profile for 'MEC7gPjrhTcs0YNWjl2I3nByM462'.
-     * @deny (get) - Unauthenticated user cannot read any user profile.
-     * @deny (list) - No user can list all profiles.
-     * @principle Enforces document ownership for reads and writes.
+     * @allow (get) Authenticated user MEC7gPjrhTcs0YNWjl2I3nByM462 can read their own profile.
+     * @allow (create) Authenticated user MEC7gPjrhTcs0YNWjl2I3nByM462 can create their own profile.
+     * @allow (update) Authenticated user MEC7gPjrhTcs0YNWjl2I3nByM462 can update their own profile.
+     * @allow (delete) Authenticated user MEC7gPjrhTcs0YNWjl2I3nByM462 can delete their own profile.
+     * @deny (get) Authenticated user User_B cannot read User_A's profile.
+     * @deny (create) Unauthenticated user cannot create any profile.
+     * @deny (update) Authenticated user User_B cannot update User_A's profile.
+     * @deny (delete) Authenticated user User_B cannot delete User_A's profile.
+     * @principle Enforces document ownership for all operations, ensuring users can only manage their own data.
      */
     match /users/{userId} {
-      // Helpers
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
+      // Helper function to check if the request is made by the owner.
       function isOwner(userId) {
-        return isSignedIn() && request.auth.uid == userId;
+        return request.auth.uid == userId;
       }
 
-      // Read Permissions
-      allow get: if isOwner(userId);
-      allow list: if false; // Listing all users is not permitted.
+      // Helper function to check if the request is made by an existing owner.
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
 
-      // Write Permissions
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      // Read permissions:
+      allow get: if isOwner(userId);
+      allow list: if false;
+
+      // Write permissions:
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
     }
   }
 }
