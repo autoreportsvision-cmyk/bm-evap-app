@@ -12,11 +12,11 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateEffectEvaluationsInputSchema = z.object({
-  effect1: z.record(z.any()).describe('Metrics and results for effect 1'),
-  effect2: z.record(z.any()).describe('Metrics and results for effect 2'),
-  effect3: z.record(z.any()).describe('Metrics and results for effect 3'),
-  effect4: z.record(z.any()).describe('Metrics and results for effect 4'),
-  effect5: z.record(z.any()).describe('Metrics and results for effect 5'),
+  effect1: z.string().describe('JSON string with metrics and results for effect 1'),
+  effect2: z.string().describe('JSON string with metrics and results for effect 2'),
+  effect3: z.string().describe('JSON string with metrics and results for effect 3'),
+  effect4: z.string().describe('JSON string with metrics and results for effect 4'),
+  effect5: z.string().describe('JSON string with metrics and results for effect 5'),
   overallSummary: z.string().describe('Overall summary of the evaporation process'),
 });
 export type GenerateEffectEvaluationsInput = z.infer<
@@ -83,7 +83,7 @@ const prompt = ai.definePrompt({
 
 Resumo Geral: {{overallSummary}}
 
-Dados por Efeito:
+Dados por Efeito (em formato JSON):
 *   **Efeito 1:** {{{effect1}}}
 *   **Efeito 2:** {{{effect2}}}
 *   **Efeito 3:** {{{effect3}}}
