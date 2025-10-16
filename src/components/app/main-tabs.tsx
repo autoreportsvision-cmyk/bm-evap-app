@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, LayoutDashboard, Bot, FileSignature, Shield } from 'lucide-react';
+import { FileText, LayoutDashboard, Bot, FileSignature, Shield, Lock } from 'lucide-react';
 import FormTab from './form-tab';
 import DashboardTab from './dashboard-tab';
 import SummaryTab from './summary-tab';
@@ -30,6 +30,7 @@ export default function MainTabs() {
   const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const isAdmin = userProfile?.role === 'admin';
+  const isPremium = userProfile?.role === 'premium' || userProfile?.role === 'admin';
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -42,12 +43,12 @@ export default function MainTabs() {
           <LayoutDashboard className="mr-2 h-4 w-4" />
           Dashboard
         </TabsTrigger>
-        <TabsTrigger value="summary">
-          <FileText className="mr-2 h-4 w-4" />
+        <TabsTrigger value="summary" disabled={!isPremium}>
+          {isPremium ? <FileText className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
           Resumo
         </TabsTrigger>
-        <TabsTrigger value="evaluations">
-          <Bot className="mr-2 h-4 w-4" />
+        <TabsTrigger value="evaluations" disabled={!isPremium}>
+          {isPremium ? <Bot className="mr-2 h-4 w-4" /> : <Lock className="mr-2 h-4 w-4" />}
           Avaliações (IA)
         </TabsTrigger>
         {isAdmin && (
@@ -63,12 +64,16 @@ export default function MainTabs() {
       <TabsContent value="dashboard">
         <DashboardTab />
       </TabsContent>
-      <TabsContent value="summary">
-        <SummaryTab />
-      </TabsContent>
-      <TabsContent value="evaluations">
-        <EvaluationsTab />
-      </TabsContent>
+        {isPremium && (
+            <>
+                <TabsContent value="summary">
+                    <SummaryTab />
+                </TabsContent>
+                <TabsContent value="evaluations">
+                    <EvaluationsTab />
+                </TabsContent>
+            </>
+        )}
       {isAdmin && (
         <TabsContent value="admin">
           <AdminTab />
