@@ -1,26 +1,33 @@
 import { z } from 'zod';
 
+const numberOrEmptyString = z.union([
+    z.number(),
+    z.literal('')
+]).pipe(
+    z.coerce.number({ invalid_type_error: "Valor inválido." })
+);
+
 export const formSchema = z.object({
-  vazaoCaldo: z.number({ required_error: 'Vazão é obrigatória.', invalid_type_error: "Vazão é obrigatória." }).min(0, 'Vazão não pode ser negativa.'),
-  brixCaldo: z.number({ required_error: 'Brix é obrigatório.', invalid_type_error: "Brix é obrigatório." }).min(0, 'Brix não pode ser negativo.'),
-  temperaturaCaldo: z.number({ required_error: 'Temperatura é obrigatória.', invalid_type_error: "Temperatura é obrigatória." }),
-  pressaoVapor: z.number({ required_error: 'Pressão é obrigatória.', invalid_type_error: "Pressão é obrigatória." }).min(0, 'Pressão não pode ser negativa.'),
+  vazaoCaldo: numberOrEmptyString.refine(val => val > 0, { message: 'Vazão é obrigatória.' }),
+  brixCaldo: numberOrEmptyString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  temperaturaCaldo: numberOrEmptyString.refine(val => val !== undefined && val !== null, { message: 'Temperatura é obrigatória.' }),
+  pressaoVapor: numberOrEmptyString.refine(val => val > 0, { message: 'Pressão é obrigatória.' }),
   preAquecimento: z.boolean(),
-  tempEntradaAquec: z.number({invalid_type_error: "Temperatura é obrigatória."}).optional(),
-  tempSaidaAquec: z.number({invalid_type_error: "Temperatura é obrigatória."}).optional(),
-  brixEfeito1: z.number({ required_error: 'Brix é obrigatório.', invalid_type_error: "Brix é obrigatório." }).min(0, 'Brix não pode ser negativo.'),
-  brixEfeito2: z.number({ required_error: 'Brix é obrigatório.', invalid_type_error: "Brix é obrigatório." }).min(0, 'Brix não pode ser negativo.'),
-  brixEfeito3: z.number({ required_error: 'Brix é obrigatório.', invalid_type_error: "Brix é obrigatório." }).min(0, 'Brix não pode ser negativo.'),
-  brixEfeito4: z.number({ required_error: 'Brix é obrigatório.', invalid_type_error: "Brix é obrigatório." }).min(0, 'Brix não pode ser negativo.'),
-  brixEfeito5: z.number({ required_error: 'Brix é obrigatório.', invalid_type_error: "Brix é obrigatório." }).min(0, 'Brix não pode ser negativo.'),
-  areaEfeito1: z.number({ required_error: 'Área é obrigatória.', invalid_type_error: "Área é obrigatória." }).min(1, 'Área deve ser maior que zero.'),
-  areaEfeito2: z.number({ required_error: 'Área é obrigatória.', invalid_type_error: "Área é obrigatória." }).min(1, 'Área deve ser maior que zero.'),
-  areaEfeito3: z.number({ required_error: 'Área é obrigatória.', invalid_type_error: "Área é obrigatória." }).min(1, 'Área deve ser maior que zero.'),
-  areaEfeito4: z.number({ required_error: 'Área é obrigatória.', invalid_type_error: "Área é obrigatória." }).min(1, 'Área deve ser maior que zero.'),
-  areaEfeito5: z.number({ required_error: 'Área é obrigatória.', invalid_type_error: "Área é obrigatória." }).min(1, 'Área deve ser maior que zero.'),
+  tempEntradaAquec: z.optional(numberOrEmptyString),
+  tempSaidaAquec: z.optional(numberOrEmptyString),
+  brixEfeito1: numberOrEmptyString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  brixEfeito2: numberOrEmptyString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  brixEfeito3: numberOrEmptyString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  brixEfeito4: numberOrEmptyString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  brixEfeito5: numberOrEmptyString.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
+  areaEfeito1: numberOrEmptyString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  areaEfeito2: numberOrEmptyString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  areaEfeito3: numberOrEmptyString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  areaEfeito4: numberOrEmptyString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  areaEfeito5: numberOrEmptyString.refine(val => val > 0, { message: 'Área é obrigatória.' }),
 }).refine(data => {
     if (data.preAquecimento) {
-        return data.tempEntradaAquec !== undefined && data.tempSaidaAquec !== undefined;
+        return data.tempEntradaAquec !== undefined && data.tempEntradaAquec !== '' && data.tempSaidaAquec !== undefined && data.tempSaidaAquec !== '';
     }
     return true;
 }, {
