@@ -38,19 +38,30 @@ export async function createStripeRedirect(plan: 'monthly' | 'yearly', userId: s
     const paymentLink = plan === 'monthly' ? monthlyLink : yearlyLink;
 
     if (!paymentLink) {
-      // Retorna um erro estruturado em vez de lançar uma exceção
-      const errorMessage = `Stripe payment link for "${plan}" plan is not configured.`;
+      const errorMessage = `O link de pagamento do Stripe para o plano "${plan}" não está configurado nas variáveis de ambiente do servidor.`;
       console.error(errorMessage);
       return { success: false, error: errorMessage };
     }
 
-    const urlWithUser = new URL(paymentLink);
+    // Validação robusta da URL
+    let urlWithUser: URL;
+    try {
+      urlWithUser = new URL(paymentLink);
+      if (urlWithUser.protocol !== 'https:' && urlWithUser.protocol !== 'http:') {
+        throw new Error('Protocolo inválido');
+      }
+    } catch (e) {
+      const errorMessage = `O link de pagamento para o plano "${plan}" ("${paymentLink}") não é uma URL válida. Verifique o arquivo .env.`;
+      console.error(errorMessage);
+      return { success: false, error: errorMessage };
+    }
+    
     urlWithUser.searchParams.append('client_reference_id', userId);
 
     return { success: true, url: urlWithUser.toString() };
 
   } catch (error: any) {
-    console.error("Error creating Stripe redirect:", error);
+    console.error("Erro ao criar o redirecionamento para o pagamento:", error);
     return { success: false, error: error.message || 'Falha ao criar o redirecionamento para o pagamento.' };
   }
 }
