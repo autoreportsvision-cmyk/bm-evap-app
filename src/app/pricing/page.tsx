@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { createCheckoutSession } from '../actions';
 import Link from 'next/link';
+import { getStripe } from '@/lib/stripe-client';
 
 export default function PricingPage() {
     const { user, isUserLoading } = useUser();
@@ -22,11 +23,11 @@ export default function PricingPage() {
             toast({
                 variant: 'destructive',
                 title: 'Erro de Configuração',
-                description: 'A chave publicável do Stripe (NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) não está configurada. Verifique as variáveis de ambiente.',
+                description: 'A chave publicável do Stripe (NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) não está configurada.',
             });
             return;
         }
-
+        
         if (!user) {
             router.push('/login?redirect=/pricing');
             return;
@@ -48,17 +49,38 @@ export default function PricingPage() {
         setLoadingPlan(plan);
         
         try {
-            // A ação agora lida com o redirecionamento diretamente.
-            // Se houver um erro, ela o lançará, e o catch aqui vai lidar com ele.
-            await createCheckoutSession(user.uid, priceId, plan);
-            // Se a linha acima for bem-sucedida, o navegador será redirecionado e este código não será executado.
+            // 1. Create the checkout session on the server
+            const session = await createCheckoutSession(user.uid, priceId, plan);
+
+            if (!session.id) {
+                throw new Error("A sessão de checkout retornada pelo servidor é inválida.");
+            }
+
+            // 2. Get the Stripe.js instance
+            const stripe = await getStripe();
+            if (!stripe) {
+                throw new Error("Não foi possível inicializar o Stripe. Verifique a chave publicável.");
+            }
+
+            // 3. Redirect to checkout
+            const { error } = await stripe.redirectToCheckout({
+                sessionId: session.id,
+            });
+
+            // This point is only reached if there's an immediate error.
+            if (error) {
+                throw new Error(error.message);
+            }
+            // If successful, the user is redirected and this code is not reached.
+
         } catch (error) {
-            console.error('Failed to create checkout session:', error);
+            console.error('Falha ao criar ou redirecionar para a sessão de checkout:', error);
             toast({
                 variant: 'destructive',
-                title: 'Erro ao Iniciar Checkout',
+                title: 'Erro ao Iniciar Pagamento',
                 description: error instanceof Error ? error.message : 'Ocorreu um erro ao tentar redirecionar para o pagamento. Tente novamente.',
             });
+        } finally {
             setLoadingPlan(null);
         }
     };

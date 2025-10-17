@@ -7,7 +7,7 @@ import { chat } from '@/ai/flows/chat-flow';
 import type { ChatInput } from '@/ai/flows/chat-flow';
 import { stripe } from '@/lib/stripe';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+import type Stripe from 'stripe';
 
 export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
   try {
@@ -34,7 +34,7 @@ export async function createCheckoutSession(
   uid: string,
   priceId: string,
   plan: 'monthly' | 'yearly'
-) {
+): Promise<Stripe.Checkout.Session> {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
   if (!process.env.STRIPE_API_KEY) {
@@ -47,11 +47,10 @@ export async function createCheckoutSession(
     throw new Error('A URL da aplicação (NEXT_PUBLIC_APP_URL) não está configurada nas variáveis de ambiente.');
   }
 
-  let session;
   try {
-    session = await stripe.checkout.sessions.create({
+    const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [ // Garante que line_items seja sempre um array
+      line_items: [
         {
           price: priceId,
           quantity: 1,
@@ -65,15 +64,11 @@ export async function createCheckoutSession(
         plan: plan,
       },
     });
+    return session;
   } catch (error) {
     console.error('Error in createCheckoutSession:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    // Re-throw a more specific error to be caught by the client-side caller.
     throw new Error(`Falha ao criar sessão de checkout: ${errorMessage}`);
-  }
-
-  if (session?.url) {
-    redirect(session.url);
-  } else {
-    throw new Error('Could not create Stripe checkout session or URL is missing.');
   }
 }
