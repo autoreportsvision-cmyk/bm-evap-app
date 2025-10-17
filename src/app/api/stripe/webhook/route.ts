@@ -9,17 +9,18 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
     const clientReferenceId = session.client_reference_id;
-    // CORREÇÃO: O campo correto é `payment_link`
-    const paymentLink = session.payment_link;
+    // CORREÇÃO CRÍTICA: A propriedade correta que contém o ID do link de pagamento é `payment_link`.
+    // O valor é uma string contendo o ID, e não um objeto.
+    const paymentLinkId = session.payment_link;
 
     if (!clientReferenceId) {
         console.error('Webhook Error: client_reference_id não encontrado na sessão do Stripe.');
         return { success: false, error: 'User ID (client_reference_id) não encontrado na sessão de checkout.', status: 400 };
     }
     
-    if (!paymentLink) {
-        console.error('Webhook Error: payment_link não encontrado na sessão do Stripe.');
-        return { success: false, error: 'ID do Link de Pagamento (payment_link) não encontrado na sessão.', status: 400 };
+    if (!paymentLinkId || typeof paymentLinkId !== 'string') {
+        console.error(`Webhook Error: payment_link_id inválido ou não encontrado na sessão do Stripe. Valor recebido: ${paymentLinkId}`);
+        return { success: false, error: 'ID do Link de Pagamento (payment_link) não encontrado ou inválido na sessão.', status: 400 };
     }
 
     const firestoreAdmin = getFirestoreAdmin();
@@ -32,21 +33,21 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
             return { success: false, error: `Usuário com ID ${clientReferenceId} não encontrado no Firestore.`, status: 404 };
         }
 
-        const monthlyPaymentLinkId = process.env.STRIPE_MONTHLY_PAYMENT_LINK_ID;
-        const yearlyPaymentLinkId = process.env.STRIPE_YEARLY_PAYMENT_LINK_ID;
+        const monthlyPaymentLinkIdEnv = process.env.STRIPE_MONTHLY_PAYMENT_LINK_ID;
+        const yearlyPaymentLinkIdEnv = process.env.STRIPE_YEARLY_PAYMENT_LINK_ID;
         
         let plan: 'monthly' | 'yearly' | null = null;
         
-        // CORREÇÃO: Comparando `paymentLink` com as variáveis de ambiente
-        if (paymentLink === monthlyPaymentLinkId) {
+        // CORREÇÃO: Comparando o `paymentLinkId` (string) com as variáveis de ambiente.
+        if (paymentLinkId === monthlyPaymentLinkIdEnv) {
             plan = 'monthly';
-        } else if (paymentLink === yearlyPaymentLinkId) {
+        } else if (paymentLinkId === yearlyPaymentLinkIdEnv) {
             plan = 'yearly';
         }
         
         if (!plan) {
-            console.error(`Webhook Error: O payment_link "${paymentLink}" não corresponde a nenhum plano configurado.`);
-            return { success: false, error: `O payment_link "${paymentLink}" recebido não corresponde a nenhum plano configurado (mensal ou anual).`, status: 400 };
+            console.error(`Webhook Error: O payment_link_id "${paymentLinkId}" não corresponde a nenhum plano configurado. Verifique as variáveis de ambiente STRIPE_MONTHLY_PAYMENT_LINK_ID e STRIPE_YEARLY_PAYMENT_LINK_ID.`);
+            return { success: false, error: `O ID do link de pagamento recebido ("${paymentLinkId}") não corresponde a nenhum plano configurado.`, status: 400 };
         }
 
         const now = new Date();
@@ -74,7 +75,11 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
 
 
 export async function POST(req: NextRequest) {
-  const sig = headers().get('stripe-signature')!;
+  const sig = headers().get('stripe-signature');
+  if (!sig) {
+    return NextResponse.json({ error: 'Webhook Error: Cabeçalho stripe-signature ausente.' }, { status: 400 });
+  }
+
   let event: Stripe.Event;
 
   try {
@@ -85,9 +90,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
+  // Lidar apenas com o evento de conclusão da sessão de checkout
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object as Stripe.Checkout.Session;
     
+    // Garantir que o pagamento foi bem-sucedido antes de conceder acesso
     if (session.payment_status === 'paid') {
       const result = await grantAccessAfterCheckout(session);
       if (!result.success) {
@@ -97,5 +104,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // Retornar uma resposta de sucesso para o Stripe para todos os eventos recebidos.
   return NextResponse.json({ received: true });
 }
