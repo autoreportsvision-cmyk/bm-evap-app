@@ -12,22 +12,26 @@ export default function PricingPage() {
     const { user } = useUser();
     const router = useRouter();
 
+    // These now point to the pre-created Stripe Payment Links
     const monthlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK;
     const yearlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK;
 
     const handleRedirect = (url: string | undefined) => {
         if (!user) {
+            // If user is not logged in, redirect to login page first.
+            // After login, they should be sent back here.
             router.push('/login?redirect=/pricing');
             return;
         }
         if (url) {
-            // Adiciona o client_reference_id à URL para identificar o usuário no checkout
+            // Append the user's UID to the Stripe Payment Link URL.
+            // Stripe will pass this ID to the webhook, so we know who to grant access to.
             const urlWithUser = new URL(url);
             urlWithUser.searchParams.append('client_reference_id', user.uid);
             window.location.href = urlWithUser.toString();
         } else {
-            console.error("Stripe Payment Link is not configured.");
-            alert("A funcionalidade de pagamento não está configurada corretamente.");
+            console.error("Stripe Payment Link is not configured in .env file.");
+            alert("A funcionalidade de pagamento não está configurada corretamente. Verifique as variáveis de ambiente.");
         }
     };
 
