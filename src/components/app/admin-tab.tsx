@@ -12,6 +12,8 @@ import { useFirestore, useUser } from '@/firebase';
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { Loader, Search, MoreHorizontal, ShieldCheck, UserCog, Crown } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function AdminTab() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,6 +67,7 @@ export default function AdminTab() {
   };
   
   const handleListPremium = async () => {
+    setSearchQuery('');
     const usersRef = collection(firestore, 'users');
     const q = query(usersRef, where('role', '==', 'premium'));
     fetchUsers(q);
@@ -74,10 +77,20 @@ export default function AdminTab() {
   const handleRoleChange = async (userId: string, newRole: 'basic' | 'premium') => {
     try {
       const userRef = doc(firestore, 'users', userId);
-      await updateDoc(userRef, { role: newRole });
+      
+      const updateData: {role: 'basic' | 'premium', accessExpiration?: Date} = { role: newRole };
+      
+      if (newRole === 'premium') {
+        const expirationDate = new Date();
+        expirationDate.setFullYear(expirationDate.getFullYear() + 10); // Concede acesso por 10 anos
+        updateData.accessExpiration = expirationDate;
+      }
+      
+      await updateDoc(userRef, updateData);
+
       setSearchResults(prevResults =>
         prevResults.map(user =>
-          user.id === userId ? { ...user, role: newRole } : user
+          user.id === userId ? { ...user, role: newRole, accessExpiration: updateData.accessExpiration } : user
         )
       );
       toast({
@@ -94,12 +107,31 @@ export default function AdminTab() {
     }
   };
 
+  const formatDate = (date: any) => {
+    if (!date) return 'N/A';
+    
+    let d: Date;
+    if (date.seconds) { // Firebase Timestamp
+      d = new Date(date.seconds * 1000);
+    } else if (date instanceof Date) {
+      d = date;
+    } else {
+      return 'Data inválida';
+    }
+
+    try {
+      return format(d, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+    } catch {
+      return 'Data inválida';
+    }
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Gerenciamento de Usuários</CardTitle>
         <CardDescription>
-          Busque por um usuário pelo nome, liste todos os usuários premium ou altere suas permissões.
+          Busque usuários pelo nome, liste todos os compradores com acesso Premium ou altere permissões.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -123,7 +155,7 @@ export default function AdminTab() {
             </form>
             <Button onClick={handleListPremium} disabled={isLoading} variant="outline">
                 {isLoading ? <Loader className="animate-spin" /> : <Crown />}
-                <span>Listar Usuários Premium</span>
+                <span>Buscar Compradores (Premium)</span>
             </Button>
         </div>
 
@@ -139,7 +171,8 @@ export default function AdminTab() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead className="text-center">Permissão Atual</TableHead>
+                <TableHead className="text-center">Permissão</TableHead>
+                <TableHead className="text-center">Acesso Expira em</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
@@ -152,6 +185,9 @@ export default function AdminTab() {
                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-red-500 text-white' : user.role === 'premium' ? 'bg-yellow-500 text-black' : 'bg-gray-500 text-white'}`}>
                         {user.role}
                     </span>
+                  </TableCell>
+                  <TableCell className="text-center text-xs">
+                    {formatDate(user.accessExpiration)}
                   </TableCell>
                   <TableCell className="text-right">
                     {user.role === 'admin' ? (
