@@ -12,23 +12,28 @@ export default function PricingPage() {
     const { user } = useUser();
     const router = useRouter();
 
+    // These environment variables should hold the full URL of your Stripe Payment Links
     const monthlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK;
     const yearlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK;
 
-    const handleRedirect = (paymentLink: string | undefined, plan: 'monthly' | 'yearly') => {
+    const handleRedirect = (paymentLink: string | undefined) => {
         if (!user) {
+            // If the user is not logged in, redirect them to the login page.
+            // After login, they should be ideally redirected back here.
             router.push('/login?redirect=/pricing');
             return;
         }
         if (paymentLink) {
-            const url = new URL(paymentLink);
-            url.searchParams.append('client_reference_id', user.uid);
-            // Os metadados agora são configurados no próprio link de pagamento do Stripe, mas podemos adicionar como parâmetro também.
-            // Isso garante que o webhook receba a informação do plano.
-            url.searchParams.append('metadata[plan]', plan); 
-            window.location.href = url.toString();
+            // Append the user's UID to the Stripe Payment Link URL.
+            // This is crucial for the webhook to identify which user to grant access to.
+            const urlWithUser = new URL(paymentLink);
+            urlWithUser.searchParams.append('client_reference_id', user.uid);
+            
+            // Redirect the user directly to the Stripe checkout page.
+            window.location.href = urlWithUser.toString();
         } else {
-            console.error("Stripe Payment Link is not configured in .env file.");
+            // This error is a safeguard for the developer.
+            console.error("Stripe Payment Link is not configured in .env.local file.");
             alert("A funcionalidade de pagamento não está configurada corretamente. Verifique as variáveis de ambiente.");
         }
     };
@@ -78,7 +83,7 @@ export default function PricingPage() {
                         <CardFooter>
                             <Button 
                                 className="w-full" 
-                                onClick={() => handleRedirect(monthlyPaymentLink, 'monthly')} 
+                                onClick={() => handleRedirect(monthlyPaymentLink)} 
                                 disabled={!monthlyPaymentLink}>
                                 Comprar Acesso Mensal
                             </Button>
@@ -109,7 +114,7 @@ export default function PricingPage() {
                         <CardFooter>
                             <Button 
                                 className="w-full" 
-                                onClick={() => handleRedirect(yearlyPaymentLink, 'yearly')} 
+                                onClick={() => handleRedirect(yearlyPaymentLink)} 
                                 disabled={!yearlyPaymentLink}>
                                 Comprar Acesso Anual
                             </Button>
