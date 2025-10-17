@@ -8,40 +8,41 @@ import { Check, Gem, Star, Loader } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { createStripeRedirect } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PricingPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     const [isRedirecting, setIsRedirecting] = useState<string | null>(null);
+    const { toast } = useToast();
 
-    // These environment variables should hold the full URL of your Stripe Payment Links
-    const monthlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK;
-    const yearlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK;
-
-    const handleRedirect = (plan: 'monthly' | 'yearly') => {
+    const handleSubscribe = async (plan: 'monthly' | 'yearly') => {
         setIsRedirecting(plan);
 
         if (!user && !isUserLoading) {
             router.push('/login?redirect=/pricing');
             return;
         }
-        
-        if (user) {
-            const paymentLink = plan === 'monthly' ? monthlyPaymentLink : yearlyPaymentLink;
 
-            if (paymentLink) {
-                const urlWithUser = new URL(paymentLink);
-                urlWithUser.searchParams.append('client_reference_id', user.uid);
-                // Direct redirection using window.location.href
-                window.location.href = urlWithUser.toString();
-            } else {
-                console.error(`Stripe Payment Link for ${plan} plan is not configured in environment variables.`);
-                alert("A funcionalidade de pagamento não está configurada corretamente.");
+        if (user) {
+            try {
+                // This server action will handle the redirect.
+                // It will throw an error if something goes wrong on the server,
+                // which we can catch here.
+                await createStripeRedirect(plan);
+            } catch (error: any) {
+                console.error("Stripe Redirect Error:", error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Erro no Pagamento',
+                    description: error.message || 'Não foi possível redirecionar para o pagamento. Verifique a configuração.',
+                });
                 setIsRedirecting(null);
             }
         }
-        // If user is loading, the click will set the loading state, and a subsequent click
-        // when the user is loaded will perform the redirect.
+        // No need for an else, the function will just wait for the user to be loaded
+        // and the user can click again.
     };
 
     const features = [
@@ -91,8 +92,8 @@ export default function PricingPage() {
                         <CardFooter>
                             <Button 
                                 className="w-full" 
-                                onClick={() => handleRedirect('monthly')} 
-                                disabled={isLoading || !monthlyPaymentLink}>
+                                onClick={() => handleSubscribe('monthly')} 
+                                disabled={isLoading}>
                                 {isRedirecting === 'monthly' ? <Loader className="animate-spin" /> : 'Comprar Acesso Mensal'}
                             </Button>
                         </CardFooter>
@@ -122,8 +123,8 @@ export default function PricingPage() {
                         <CardFooter>
                             <Button 
                                 className="w-full" 
-                                onClick={() => handleRedirect('yearly')} 
-                                disabled={isLoading || !yearlyPaymentLink}>
+                                onClick={() => handleSubscribe('yearly')} 
+                                disabled={isLoading}>
                                  {isRedirecting === 'yearly' ? <Loader className="animate-spin" /> : 'Comprar Acesso Anual'}
                             </Button>
                         </CardFooter>
