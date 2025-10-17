@@ -32,6 +32,7 @@ export async function createStripeRedirect(plan: 'monthly' | 'yearly', userId: s
   }
   
   try {
+    // On the server, we use env vars without NEXT_PUBLIC_
     const monthlyLink = process.env.STRIPE_MONTHLY_PAYMENT_LINK;
     const yearlyLink = process.env.STRIPE_YEARLY_PAYMENT_LINK;
     const paymentLink = plan === 'monthly' ? monthlyLink : yearlyLink;
@@ -50,3 +51,4 @@ export async function createStripeRedirect(plan: 'monthly' | 'yearly', userId: s
     return { success: false, error: error.message || 'Falha ao criar o redirecionamento para o pagamento.' };
   }
 }
+
