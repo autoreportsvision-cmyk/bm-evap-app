@@ -32,6 +32,7 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
         }
         
         // Determine o plano com base no ID do Payment Link
+        // Os Buy Buttons usam os Payment Links, então podemos comparar os IDs.
         const monthlyLink = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK;
         const yearlyLink = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK;
         
