@@ -9,15 +9,17 @@ import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import StripeBuyButton from '@/components/app/stripe-buy-button';
 
-// Lendo as variáveis de ambiente no topo do componente
-const monthlyBuyButtonId = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_BUY_BUTTON_ID;
-const yearlyBuyButtonId = process.env.NEXT_PUBLIC_STRIPE_YEARLY_BUY_BUTTON_ID;
-const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
 export default function PricingPage() {
     const { user } = useUser();
     const userEmail = user?.email || undefined;
     const userId = user?.uid || undefined;
+
+    // Lendo as variáveis de ambiente no escopo do componente para garantir o acesso no lado do cliente
+    const monthlyBuyButtonId = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_BUY_BUTTON_ID;
+    const yearlyBuyButtonId = process.env.NEXT_PUBLIC_STRIPE_YEARLY_BUY_BUTTON_ID;
+    const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+
 
     const features = [
         "Acesso a todos os Dashboards.",
