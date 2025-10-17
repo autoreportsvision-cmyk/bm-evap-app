@@ -9,9 +9,14 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
     const clientReferenceId = session.client_reference_id;
+    const paymentLinkId = session.payment_link;
 
     if (!clientReferenceId) {
         return { success: false, error: 'User ID (client_reference_id) não encontrado na sessão de checkout.', status: 400 };
+    }
+    
+    if (!paymentLinkId) {
+        return { success: false, error: 'ID do Link de Pagamento (payment_link) não encontrado na sessão.', status: 400 };
     }
 
     const firestoreAdmin = getFirestoreAdmin();
@@ -23,26 +28,18 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
             return { success: false, error: `Usuário com ID ${clientReferenceId} não encontrado no Firestore.`, status: 404 };
         }
 
-        const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-        
-        if (!lineItems || lineItems.data.length === 0 || !lineItems.data[0].price) {
-             return { success: false, error: 'Não foi possível encontrar itens ou price_id na sessão do Stripe.', status: 400 };
-        }
-        
-        const priceId = lineItems.data[0].price.id;
-        
-        const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
-        const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
+        const monthlyPaymentLinkId = process.env.STRIPE_MONTHLY_PAYMENT_LINK_ID;
+        const yearlyPaymentLinkId = process.env.STRIPE_YEARLY_PAYMENT_LINK_ID;
         
         let plan: 'monthly' | 'yearly' | null = null;
-        if (priceId === monthlyPriceId) {
+        if (paymentLinkId === monthlyPaymentLinkId) {
             plan = 'monthly';
-        } else if (priceId === yearlyPriceId) {
+        } else if (paymentLinkId === yearlyPaymentLinkId) {
             plan = 'yearly';
         }
         
         if (!plan) {
-            return { success: false, error: `O price_id "${priceId}" recebido não corresponde a nenhum plano configurado (mensal ou anual).`, status: 400 };
+            return { success: false, error: `O payment_link_id "${paymentLinkId}" recebido não corresponde a nenhum plano configurado (mensal ou anual).`, status: 400 };
         }
 
         const now = new Date();
