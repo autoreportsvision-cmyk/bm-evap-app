@@ -31,6 +31,7 @@ import {
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [isSigningUp, setIsSigningUp] = useState(false);
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -50,6 +51,14 @@ export default function LoginPage() {
                 variant: 'destructive',
                 title: 'Erro',
                 description: 'Por favor, insira seu nome.',
+            });
+            return;
+        }
+        if (password !== confirmPassword) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro',
+                description: 'As senhas não coincidem. Por favor, verifique.',
             });
             return;
         }
@@ -179,6 +188,18 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
+              {isSigningUp && (
+                <div className="space-y-2">
+                    <Label htmlFor="confirm-password">Confirmar Senha</Label>
+                    <Input
+                    id="confirm-password"
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    />
+                </div>
+                )}
               <Button type="submit" className="w-full">
                 {isSigningUp ? 'Registrar' : 'Entrar'}
               </Button>
@@ -186,7 +207,12 @@ export default function LoginPage() {
             <div className="mt-4 text-center text-sm">
               {isSigningUp ? 'Já tem uma conta?' : 'Não tem uma conta?'}
               <button
-                onClick={() => setIsSigningUp(!isSigningUp)}
+                onClick={() => {
+                    setIsSigningUp(!isSigningUp);
+                    // Limpar campos de senha ao alternar
+                    setPassword('');
+                    setConfirmPassword('');
+                }}
                 className="ml-1 underline"
               >
                 {isSigningUp ? 'Entrar' : 'Registrar'}
@@ -231,3 +257,5 @@ export default function LoginPage() {
     </>
   );
 }
+
+    
