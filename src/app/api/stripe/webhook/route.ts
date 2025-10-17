@@ -9,20 +9,11 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
     const userId = session.metadata?.userId;
-    
-    // Acessando os itens da linha da sessão para determinar o plano
-    const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
-    const priceId = lineItems.data[0]?.price?.id;
+    const plan = session.metadata?.plan as 'monthly' | 'yearly' | undefined;
 
-    if (!priceId) {
-         console.error('Webhook Error: checkout.session.completed não continha um priceId nos itens da linha.');
-         return { success: false, error: 'ID de preço ausente nos itens da linha da sessão.' };
-    }
 
-    const plan = priceId === process.env.STRIPE_YEARLY_PRICE_ID ? 'yearly' : 'monthly';
-
-    if (!userId) {
-        console.error(`Webhook Error: checkout.session.completed não continha o userId nos metadados.`);
+    if (!userId || !plan) {
+        console.error(`Webhook Error: checkout.session.completed não continha userId ou plan nos metadados.`);
         return { success: false, error: 'Metadados ausentes na sessão de checkout.' };
     }
     
@@ -38,8 +29,7 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
         } else if (plan === 'monthly') {
           expirationDate.setMonth(now.getMonth() + 1);
         } else {
-            // Isso não deve acontecer se os priceIds estiverem corretos
-            console.error(`Tipo de plano inválido determinado pelo priceId no webhook: ${plan}`);
+            console.error(`Tipo de plano inválido recebido no webhook: ${plan}`);
             return { success: false, error: `Tipo de plano inválido: ${plan}` };
         }
 
@@ -89,4 +79,3 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ received: true });
 }
-

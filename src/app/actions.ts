@@ -33,9 +33,6 @@ export async function createStripeCheckoutSession(plan: 'monthly' | 'yearly', us
   if (!userId) {
     return { success: false, error: 'auth/no-user-id' };
   }
-  
-  // A verificação da chave da API agora está na inicialização em src/lib/stripe.ts.
-  // Se chegarmos aqui, a chave da API existe.
 
   const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
   const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
@@ -59,10 +56,10 @@ export async function createStripeCheckoutSession(plan: 'monthly' | 'yearly', us
           quantity: 1,
         },
       ],
-      mode: 'payment', // Alterado para 'payment' para pagamentos únicos
+      mode: 'payment',
       metadata: {
         userId: userId,
-        plan: plan, // Embora o webhook não precise mais disso, pode ser útil para referência
+        plan: plan, // Passando o plano diretamente nos metadados
       },
       success_url: `${app_url}/?payment_success=true`,
       cancel_url: `${app_url}/pricing?payment_canceled=true`,
