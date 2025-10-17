@@ -31,21 +31,46 @@ const optionalNumberFromString = z.union([
 
 
 export const formSchema = z.object({
+  numberOfEffects: z.number().min(1).max(5),
   vazaoCaldo: numberFromStringOrNumber.refine(val => val > 0, { message: 'Vazão é obrigatória.' }),
   brixCaldo: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
   temperaturaCaldo: optionalNumberFromString,
   pressaoVapor: numberFromStringOrNumber.refine(val => !isNaN(val), { message: 'Pressão é obrigatória.' }),
-  brixEfeito1: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  brixEfeito2: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  brixEfeito3: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  brixEfeito4: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  brixEfeito5: numberFromStringOrNumber.refine(val => val > 0, { message: 'Brix é obrigatório.' }),
-  areaEfeito1: numberFromStringOrNumber.refine(val => val > 0, { message: 'Área é obrigatória.' }),
-  areaEfeito2: numberFromStringOrNumber.refine(val => val > 0, { message: 'Área é obrigatória.' }),
-  areaEfeito3: numberFromStringOrNumber.refine(val => val > 0, { message: 'Área é obrigatória.' }),
-  areaEfeito4: numberFromStringOrNumber.refine(val => val > 0, { message: 'Área é obrigatória.' }),
-  areaEfeito5: numberFromStringOrNumber.refine(val => val > 0, { message: 'Área é obrigatória.' }),
+  
+  // Effects data will be validated with a superRefine
+  brixEfeito1: optionalNumberFromString,
+  brixEfeito2: optionalNumberFromString,
+  brixEfeito3: optionalNumberFromString,
+  brixEfeito4: optionalNumberFromString,
+  brixEfeito5: optionalNumberFromString,
+
+  areaEfeito1: optionalNumberFromString,
+  areaEfeito2: optionalNumberFromString,
+  areaEfeito3: optionalNumberFromString,
+  areaEfeito4: optionalNumberFromString,
+  areaEfeito5: optionalNumberFromString,
+}).superRefine((data, ctx) => {
+    for (let i = 1; i <= data.numberOfEffects; i++) {
+        const brixKey = `brixEfeito${i}` as keyof typeof data;
+        const areaKey = `areaEfeito${i}` as keyof typeof data;
+
+        if (data[brixKey] === undefined || data[brixKey] === null || isNaN(data[brixKey] as number) || (data[brixKey] as number) <= 0) {
+             ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Brix é obrigatório.",
+                path: [brixKey],
+            });
+        }
+        if (data[areaKey] === undefined || data[areaKey] === null || isNaN(data[areaKey] as number) || (data[areaKey] as number) <= 0) {
+             ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Área é obrigatória.",
+                path: [areaKey],
+            });
+        }
+    }
 });
+
 
 export type EvaporationData = z.infer<typeof formSchema>;
 
@@ -72,13 +97,7 @@ export type CalculatedData = {
   kgVaporPorM2: { name: string; value: number }[];
   caldoClarificado: Record<string, any>;
   desempenhoPrimeiroEfeito: Record<string, any>;
-  effects: {
-    effect1: Record<string, any>;
-    effect2: Record<string, any>;
-    effect3: Record<string, any>;
-    effect4: Record<string, any>;
-    effect5: Record<string, any>;
-  };
+  effects: Record<string, any>; // Now a flexible record
   overallSummary: string;
   effectsSummary: EffectSummaryData[];
 };

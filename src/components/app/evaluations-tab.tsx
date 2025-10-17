@@ -58,23 +58,8 @@ export default function EvaluationsTab() {
 
     setLoading(true);
 
-    const effectsPayload = calculatedData.effectsSummary.reduce((acc, effect, index) => {
-        const effectKey = `effect${index + 1}` as keyof typeof acc;
-        acc[effectKey] = {
-            "Brix Entrada (%)": effect.brixIn,
-            "Brix Saída (%)": effect.brixOut,
-            "Vapor Gerado (t/h)": effect.vaporGerado,
-            "Taxa Evaporação (t/h)": effect.taxaEvaporacao,
-            "Eficiência (%)": effect.eficiencia,
-        };
-        return acc;
-    }, {} as {
-        effect1: any, effect2: any, effect3: any, effect4: any, effect5: any
-    });
-
-
     const result = await getAiEvaluations({
-      ...effectsPayload,
+      effects: calculatedData.effects,
       overallSummary: calculatedData.overallSummary,
       prompt: prompt,
     });
@@ -164,7 +149,7 @@ export default function EvaluationsTab() {
                     <CardTitle>Prompt da IA</CardTitle>
                     <CardDescription>
                     Altere o prompt abaixo para customizar a análise gerada pela inteligência artificial. 
-                    As variáveis como `${'${input.currentDate}'}` e `${'${input.overallSummary}'}` serão substituídas pelos dados do processo.
+                    As variáveis como `${'{{{currentDate}}}'}`, `${'{{{overallSummary}}}'` e `${'{{{effectsJson}}}'` serão substituídas pelos dados do processo.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

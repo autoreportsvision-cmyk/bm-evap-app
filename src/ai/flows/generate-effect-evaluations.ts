@@ -12,20 +12,9 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-const EffectDataSchema = z.object({
-  'Brix Entrada (%)': z.number(),
-  'Brix Saída (%)': z.number(),
-  'Vapor Gerado (t/h)': z.number(),
-  'Taxa Evaporação (t/h)': z.number(),
-  'Eficiência (%)': z.number(),
-});
 
 const GenerateEffectEvaluationsInputSchema = z.object({
-  effect1: EffectDataSchema,
-  effect2: EffectDataSchema,
-  effect3: EffectDataSchema,
-  effect4: EffectDataSchema,
-  effect5: EffectDataSchema,
+  effects: z.record(z.any()), // flexible effects object
   overallSummary: z.string().describe('Overall summary of the evaporation process'),
   prompt: z.string().describe('The prompt to be used for the AI evaluation'),
 });
@@ -40,11 +29,7 @@ const PromptInputSchema = z.object({
     prompt: z.string(),
     currentDate: z.string(),
     overallSummary: z.string(),
-    effect1: EffectDataSchema,
-    effect2: EffectDataSchema,
-    effect3: EffectDataSchema,
-    effect4: EffectDataSchema,
-    effect5: EffectDataSchema,
+    effectsJson: z.string(),
 });
 
 const evaluationPrompt = ai.definePrompt({
@@ -59,11 +44,7 @@ Data da Análise: {{{currentDate}}}
 Resumo Geral: {{{overallSummary}}}
 
 Dados por Efeito:
-*   Efeito 1: {{{json effect1}}}
-*   Efeito 2: {{{json effect2}}}
-*   Efeito 3: {{{json effect3}}}
-*   Efeito 4: {{{json effect4}}}
-*   Efeito 5: {{{json effect5}}}
+{{{effectsJson}}}
 `
 });
 
@@ -77,9 +58,16 @@ const generateEvaluationsFlow = ai.defineFlow(
   async (input) => {
     const currentDate = new Date().toLocaleString('pt-BR');
     
+    // Create a JSON string of the effects to pass to the prompt
+    const effectsJson = Object.entries(input.effects).map(([key, value]) => {
+        return `*   ${key.replace('effect', 'Efeito ')}: ${JSON.stringify(value)}`;
+    }).join('\n');
+
     const { output } = await evaluationPrompt({
-        ...input,
+        prompt: input.prompt,
         currentDate,
+        overallSummary: input.overallSummary,
+        effectsJson: effectsJson,
     });
     
     return output!;

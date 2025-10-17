@@ -1,49 +1,43 @@
 
 import type { EvaporationData, CalculatedData, EffectSummaryData } from './types';
 
-// NOTE: These are placeholder calculations. Replace with real formulas.
 export function performCalculations(data: EvaporationData): CalculatedData {
   const { 
+    numberOfEffects,
     vazaoCaldo, 
     brixCaldo, 
     temperaturaCaldo, 
     pressaoVapor,
-    brixEfeito1,
-    brixEfeito2,
-    brixEfeito3,
-    brixEfeito4,
-    brixEfeito5,
-    areaEfeito1,
-    areaEfeito2,
-    areaEfeito3,
-    areaEfeito4,
-    areaEfeito5,
    } = data;
 
-  const densidadeCaldo = 1000 + (4.86 * brixCaldo) - (0.09 * Math.pow(brixCaldo, 2)); // Fórmula mais precisa
+  const brixEfeitos: number[] = [];
+  const areaEfeitos: number[] = [];
+  for (let i = 1; i <= numberOfEffects; i++) {
+    brixEfeitos.push(data[`brixEfeito${i}` as keyof EvaporationData] as number);
+    areaEfeitos.push(data[`areaEfeito${i}` as keyof EvaporationData] as number);
+  }
 
-  // Temperatura de ebulição da água na pressão de escape (aproximação)
-  const tempEbulicaoPrimeiroEfeito = 100 + 13.5 * Math.log(pressaoVapor + 1); // Aprox. para kgf/cm²
+  const densidadeCaldo = 1000 + (4.86 * brixCaldo) - (0.09 * Math.pow(brixCaldo, 2));
+
+  const tempEbulicaoPrimeiroEfeito = 100 + 13.5 * Math.log(pressaoVapor + 1);
 
   const calorEspecificoCaldo = 4.187 * (1 - (0.006 * brixCaldo)); // kJ/kg°C
   const calorLatenteVapor = 2257; // kJ/kg (aproximado)
   const vazaoMassaCaldo = (vazaoCaldo * densidadeCaldo) / 1000; // t/h
   const tempEntrada = temperaturaCaldo && !isNaN(temperaturaCaldo) ? temperaturaCaldo : 105;
 
-  // 1. Cálculo do Vapor SOMENTE para Aquecimento
   let vaporParaAquecimento = 0;
   if (tempEntrada < tempEbulicaoPrimeiroEfeito) {
       vaporParaAquecimento = (vazaoMassaCaldo * calorEspecificoCaldo * (tempEbulicaoPrimeiroEfeito - tempEntrada)) / calorLatenteVapor;
   }
 
-  const brixValues = [brixCaldo, brixEfeito1, brixEfeito2, brixEfeito3, brixEfeito4, brixEfeito5];
+  const brixValues = [brixCaldo, ...brixEfeitos];
   
   const vazoesSaida: number[] = [];
   const evaporationRatesTons: number[] = [];
   let vazaoEntradaAtual = vazaoMassaCaldo;
   
-  // 2. Balanço de massa para calcular taxas de evaporação em t/h e vazões
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < numberOfEffects; i++) {
     const brixIn = brixValues[i];
     const brixOut = brixValues[i+1];
     
@@ -56,12 +50,10 @@ export function performCalculations(data: EvaporationData): CalculatedData {
     vazaoEntradaAtual = vazaoSaida;
   }
 
-  // 3. Cálculo do Consumo Total de Vapor no Primeiro Efeito
   const consumoVaporPrimeiroEfeito = vaporParaAquecimento + evaporationRatesTons[0];
 
-  // Cálculo da taxa de evaporação em PERCENTAGEM, conforme solicitado
   const evaporationRatePercent: { name: string; rate: number }[] = [];
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < numberOfEffects; i++) {
       const brixIn = brixValues[i];
       const brixOut = brixValues[i+1];
       const rate = (1 - (brixIn / brixOut)) * 100;
@@ -71,33 +63,24 @@ export function performCalculations(data: EvaporationData): CalculatedData {
       });
   }
 
+  const brixEvolution = brixEfeitos.map((brix, index) => ({
+    name: `Efeito ${index + 1}`,
+    brix: parseFloat(brix.toFixed(1))
+  }));
 
-  const brixEvolution = [
-    { name: 'Efeito 1', brix: brixEfeito1 },
-    { name: 'Efeito 2', brix: brixEfeito2 },
-    { name: 'Efeito 3', brix: brixEfeito3 },
-    { name: 'Efeito 4', brix: brixEfeito4 },
-    { name: 'Efeito 5', brix: brixEfeito5 },
-  ].map(d => ({...d, brix: parseFloat(d.brix.toFixed(1))}));
-
-  const effectEfficiency = [
-    { name: 'Efeito 1', efficiency: 85 + Math.random() * 10 },
-    { name: 'Efeito 2', efficiency: 88 + Math.random() * 10 },
-    { name: 'Efeito 3', efficiency: 90 + Math.random() * 8 },
-    { name: 'Efeito 4', efficiency: 92 + Math.random() * 5 },
-    { name: 'Efeito 5', efficiency: 95 + Math.random() * 4 },
-  ].map(d => ({...d, efficiency: parseFloat(d.efficiency.toFixed(1))}));
+  const effectEfficiency = brixEfeitos.map((_, index) => ({
+    name: `Efeito ${index + 1}`,
+    efficiency: 85 + Math.random() * 15 // Placeholder
+  })).map(d => ({ ...d, efficiency: parseFloat(d.efficiency.toFixed(1)) }));
   
-  const vaporGeneration = brixEvolution.map((item, index) => ({
-      name: item.name,
-      // O vapor gerado é a própria taxa de evaporação do efeito em toneladas
+  const vaporGeneration = brixEfeitos.map((_, index) => ({
+      name: `Efeito ${index + 1}`,
       generation: evaporationRatesTons[index]
   })).map(d => ({...d, generation: parseFloat(d.generation.toFixed(1))}));
 
-  const areas = [areaEfeito1, areaEfeito2, areaEfeito3, areaEfeito4, areaEfeito5];
   const kgVaporPorM2 = vaporGeneration.map((item, index) => ({
       name: item.name,
-      value: (item.generation * 1000) / areas[index],
+      value: (item.generation * 1000) / areaEfeitos[index],
   })).map(d => ({...d, value: parseFloat(d.value.toFixed(2))}));
 
   const caldoClarificado = {
@@ -116,13 +99,17 @@ export function performCalculations(data: EvaporationData): CalculatedData {
     summary: 'Indicadores chave de performance para o primeiro efeito.'
   };
 
-  const effects = {
-    effect1: { vazao: vazaoCaldo, brix: brixEvolution[0].brix, eficiencia: effectEfficiency[0].efficiency, taxa_evaporacao: evaporationRatesTons[0], area: areaEfeito1, kg_vapor_m2: kgVaporPorM2[0].value },
-    effect2: { brix: brixEvolution[1].brix, eficiencia: effectEfficiency[1].efficiency, taxa_evaporacao: evaporationRatesTons[1], area: areaEfeito2, kg_vapor_m2: kgVaporPorM2[1].value },
-    effect3: { brix: brixEvolution[2].brix, eficiencia: effectEfficiency[2].efficiency, taxa_evaporacao: evaporationRatesTons[2], area: areaEfeito3, kg_vapor_m2: kgVaporPorM2[2].value },
-    effect4: { brix: brixEvolution[3].brix, eficiencia: effectEfficiency[3].efficiency, taxa_evaporacao: evaporationRatesTons[3], area: areaEfeito4, kg_vapor_m2: kgVaporPorM2[3].value },
-    effect5: { brix: brixEvolution[4].brix, eficiencia: effectEfficiency[4].efficiency, taxa_evaporacao: evaporationRatesTons[4], area: areaEfeito5, kg_vapor_m2: kgVaporPorM2[4].value },
-  };
+  const effects: Record<string, any> = {};
+  for (let i = 0; i < numberOfEffects; i++) {
+    effects[`effect${i + 1}`] = {
+      vazao: vazoesSaida[i],
+      brix: brixEvolution[i].brix,
+      eficiencia: effectEfficiency[i].efficiency,
+      taxa_evaporacao: evaporationRatesTons[i],
+      area: areaEfeitos[i],
+      kg_vapor_m2: kgVaporPorM2[i].value
+    };
+  }
 
   const overallSummary = `Processo com vazão de ${vazaoCaldo} m³/h e brix de ${brixCaldo}%. O consumo total de vapor no primeiro efeito é de ${consumoVaporPrimeiroEfeito.toFixed(2)} t/h, sendo ${vaporParaAquecimento.toFixed(2)} t/h para aquecimento do caldo e ${evaporationRatesTons[0].toFixed(2)} t/h para evaporação.`;
 
@@ -130,7 +117,6 @@ export function performCalculations(data: EvaporationData): CalculatedData {
     const brixIn = brixValues[index];
     const brixOut = brixValues[index + 1];
     
-    // Calcula a taxa de evaporação em porcentagem
     const taxaEvaporacaoPercent = (1 - (brixIn / brixOut)) * 100;
     
     return {
@@ -139,20 +125,20 @@ export function performCalculations(data: EvaporationData): CalculatedData {
         brixOut: parseFloat(brixOut.toFixed(2)),
         vazaoCaldo: parseFloat(vazoesSaida[index].toFixed(2)),
         vaporGerado: parseFloat(vaporGeneration[index].generation.toFixed(2)),
-        taxaEvaporacao: parseFloat(taxaEvaporacaoPercent.toFixed(2)), // Usa o valor em porcentagem
+        taxaEvaporacao: parseFloat(taxaEvaporacaoPercent.toFixed(2)),
         eficiencia: parseFloat(effectEfficiency[index].efficiency.toFixed(2)),
         kgVaporM2: parseFloat(kgVaporPorM2[index].value.toFixed(2)),
-        area: areas[index],
+        area: areaEfeitos[index],
     }
   });
 
 
   return {
     densidadeCaldo,
-    consumoVaporTotal: consumoVaporPrimeiroEfeito, // Agora o nome antigo armazena o valor correto
+    consumoVaporTotal: consumoVaporPrimeiroEfeito,
     brixEvolution,
     effectEfficiency,
-    evaporationRate: evaporationRatePercent, // Exportando a taxa em porcentagem para o gráfico
+    evaporationRate: evaporationRatePercent,
     vaporGeneration,
     kgVaporPorM2,
     caldoClarificado,

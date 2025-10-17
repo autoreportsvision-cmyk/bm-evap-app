@@ -4,6 +4,7 @@ import type { EvaporationData } from './types';
 // Using empty strings for number inputs that will be parsed
 // to prevent "uncontrolled to controlled" React error.
 export const INITIAL_FORM_DATA: EvaporationData = {
+  numberOfEffects: 5,
   vazaoCaldo: '' as any,
   brixCaldo: '' as any,
   temperaturaCaldo: '' as any,
@@ -52,7 +53,7 @@ Informações das tabelas presentes na tela RESUMO
 **O relatório DEVE ser gerado estritamente no formato de tópicos abaixo, utilizando os emojis (pictogramas) especificados para cada categoria.** A linguagem deve ser simples e direta, focada no operador de processo.
 Acrescentar ao final do relatório informações sobre Temperatura e pressões ideais para que cada efeito opere de forma eficiente.
 
-*   **TÍTULO:** "Relatório Rápido de Evaporação - \${input.currentDate}"
+*   **TÍTULO:** "Relatório Rápido de Evaporação - {{{currentDate}}}"
 *   **STATUS GERAL:** Resumo conciso da situação global da evaporação (1-2 frases), baseado apenas em Brix e Vazão.
 *   **SEÇÃO: Pontos Positivos (use SEMPRE o emoji ✅ no início de cada item):**
     *   \`✅ [Parâmetro]: [Valor Atual]. Situação: [Breve descrição positiva]. Recomendação: [Manter ou nenhuma].\`
@@ -96,12 +97,8 @@ PRÉ EVAPORADOR: 1,5 kgf/cm² - 126ºC
 \`\`\`
 
 ### Dados do Processo para Análise (da tela DASHBOARD):
-Resumo Geral: \${input.overallSummary}
+Resumo Geral: {{{overallSummary}}}
 
 Dados por Efeito:
-*   Efeito 1: \${JSON.stringify(input.effect1)}
-*   Efeito 2: \${JSON.stringify(input.effect2)}
-*   Efeito 3: \${JSON.stringify(input.effect3)}
-*   Efeito 4: \${JSON.stringify(input.effect4)}
-*   Efeito 5: \${JSON.stringify(input.effect5)}
+{{{effectsJson}}}
 `;

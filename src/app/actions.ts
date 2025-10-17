@@ -11,9 +11,10 @@ export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): P
   try {
     const evaluations = await generateEffectEvaluations(input);
     return { success: true, data: evaluations };
-  } catch (error) {
-    console.error(error);
-    return { success: false, error: 'Falha ao gerar avaliações de IA.' };
+  } catch (error: any) {
+    console.error('Error in getAiEvaluations:', error);
+    const errorMessage = error.message || 'Falha ao gerar avaliações de IA.';
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -21,8 +22,9 @@ export async function getChatResponse(input: ChatInput): Promise<{ success: bool
     try {
         const response = await chat(input);
         return { success: true, data: response };
-    } catch (error) {
-        console.error(error);
-        return { success: false, error: 'Falha ao obter resposta do chat.' };
+    } catch (error: any) {
+        console.error('Error in getChatResponse:', error);
+        const errorMessage = error.message || 'Falha ao obter resposta do chat.';
+        return { success: false, error: errorMessage };
     }
 }
