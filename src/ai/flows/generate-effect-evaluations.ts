@@ -40,33 +40,30 @@ export async function generateEffectEvaluations(
   input: GenerateEffectEvaluationsInput
 ): Promise<GenerateEffectEvaluationsOutput> {
   const currentDate = new Date().toLocaleString('pt-BR');
-  const fullInput = { ...input, currentDate };
+  // Stringify the effect data before passing it to the flow
+  const stringifiedInput = {
+    ...input,
+    currentDate,
+    effect1: JSON.stringify(input.effect1, null, 2),
+    effect2: JSON.stringify(input.effect2, null, 2),
+    effect3: JSON.stringify(input.effect3, null, 2),
+    effect4: JSON.stringify(input.effect4, null, 2),
+    effect5: JSON.stringify(input.effect5, null, 2),
+  };
 
-  // This flow now uses a structured prompt defined with Genkit
-  return generateEvaluationsFlow(fullInput);
+  return generateEvaluationsFlow(stringifiedInput);
 }
 
-const PromptInputSchema = GenerateEffectEvaluationsInputSchema.extend({
-  currentDate: z.string(),
-});
-
-const generateEvaluationsPrompt = ai.definePrompt({
-    name: 'generateEvaluationsPrompt',
-    input: { schema: PromptInputSchema },
-    output: { format: 'text' },
-    prompt: `{{{prompt}}}
-
-### Dados do Processo para Análise:
-Data da Análise: {{{currentDate}}}
-Resumo Geral: {{{overallSummary}}}
-
-Dados por Efeito:
-*   Efeito 1: ${JSON.stringify({effect1: '{{{effect1}}}'})}
-*   Efeito 2: ${JSON.stringify({effect2: '{{{effect2}}}'})}
-*   Efeito 3: ${JSON.stringify({effect3: '{{{effect3}}}'})}
-*   Efeito 4: ${JSON.stringify({effect4: '{{{effect4}}}'})}
-*   Efeito 5: ${JSON.stringify({effect5: '{{{effect5}}}'})}
-`
+// The input schema for the prompt now expects the effect data as strings.
+const PromptInputSchema = z.object({
+    prompt: z.string(),
+    currentDate: z.string(),
+    overallSummary: z.string(),
+    effect1: z.string(),
+    effect2: z.string(),
+    effect3: z.string(),
+    effect4: z.string(),
+    effect5: z.string(),
 });
 
 
@@ -77,21 +74,27 @@ const generateEvaluationsFlow = ai.defineFlow(
     outputSchema: z.string(),
   },
   async (input) => {
-    // Replace the JSON string placeholders with actual stringified JSON
-    // The prompt text itself is complex and contains JSON-like structures that handlebars can't handle directly.
-    const promptText = input.prompt
-        .replace(/\$\{input.currentDate\}/g, input.currentDate)
-        .replace(/\$\{input.overallSummary\}/g, input.overallSummary)
-        .replace(/\$\{JSON.stringify\(input.effect1\)\}/g, JSON.stringify(input.effect1, null, 2))
-        .replace(/\$\{JSON.stringify\(input.effect2\)\}/g, JSON.stringify(input.effect2, null, 2))
-        .replace(/\$\{JSON.stringify\(input.effect3\)\}/g, JSON.stringify(input.effect3, null, 2))
-        .replace(/\$\{JSON.stringify\(input.effect4\)\}/g, JSON.stringify(input.effect4, null, 2))
-        .replace(/\$\{JSON.stringify\(input.effect5\)\}/g, JSON.stringify(input.effect5, null, 2));
 
+    const promptText = `
+{{{prompt}}}
+
+### Dados do Processo para Análise:
+Data da Análise: {{{currentDate}}}
+Resumo Geral: {{{overallSummary}}}
+
+Dados por Efeito:
+*   Efeito 1: {{{effect1}}}
+*   Efeito 2: {{{effect2}}}
+*   Efeito 3: {{{effect3}}}
+*   Efeito 4: {{{effect4}}}
+*   Efeito 5: {{{effect5}}}
+`;
 
     const result = await ai.generate({
         prompt: promptText,
         model: 'googleai/gemini-2.5-flash',
+        // Use handlebars to substitute variables
+        templateData: input
     });
 
     return result.text;
