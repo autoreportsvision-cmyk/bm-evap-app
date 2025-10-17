@@ -34,23 +34,27 @@ export async function createStripeRedirect(plan: 'monthly' | 'yearly', userId: s
   try {
     const monthlyLink = process.env.STRIPE_MONTHLY_PAYMENT_LINK;
     const yearlyLink = process.env.STRIPE_YEARLY_PAYMENT_LINK;
-    const paymentLink = plan === 'monthly' ? monthlyLink : yearlyLink;
+    let paymentLink = plan === 'monthly' ? monthlyLink : yearlyLink;
 
     if (!paymentLink) {
       const errorMessage = `O link de pagamento do Stripe para o plano "${plan}" não está configurado nas variáveis de ambiente do servidor.`;
       console.error(errorMessage);
       return { success: false, error: errorMessage };
     }
-    
-    // Simplificando para concatenação de string
-    const finalUrl = `${paymentLink}?client_reference_id=${userId}`;
 
-    // Validação simples para garantir que a URL final pareça correta.
-    if (!finalUrl.startsWith('https://')) {
-        const errorMessage = `O link de pagamento para o plano "${plan}" ("${paymentLink}") não é uma URL HTTPS válida. Verifique o arquivo .env.`;
+    // Validação simples para garantir que a URL base pareça correta.
+    if (!paymentLink.startsWith('https://buy.stripe.com/')) {
+        const errorMessage = `O link de pagamento para o plano "${plan}" ("${paymentLink}") não é uma URL de checkout do Stripe válida. Verifique o arquivo .env.`;
         console.error(errorMessage);
         return { success: false, error: errorMessage };
     }
+
+    // Lógica inteligente para anexar o client_reference_id
+    // Remove qualquer parâmetro client_reference_id existente para evitar duplicatas.
+    const baseUrl = paymentLink.split('?')[0];
+
+    // Constrói a URL final de forma segura
+    const finalUrl = `${baseUrl}?client_reference_id=${userId}`;
 
     return { success: true, url: finalUrl };
 
