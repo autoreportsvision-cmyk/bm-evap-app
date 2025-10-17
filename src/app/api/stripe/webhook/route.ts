@@ -10,15 +10,16 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
     const userId = session.metadata?.userId;
     
-    if (!session.line_items) {
-         console.error('Webhook Error: checkout.session.completed não continha line_items.');
-         return { success: false, error: 'Itens de linha ausentes na sessão de checkout.' };
+    // Acessando os itens da linha da sessão para determinar o plano
+    const lineItems = await stripe.checkout.sessions.listLineItems(session.id);
+    const priceId = lineItems.data[0]?.price?.id;
+
+    if (!priceId) {
+         console.error('Webhook Error: checkout.session.completed não continha um priceId nos itens da linha.');
+         return { success: false, error: 'ID de preço ausente nos itens da linha da sessão.' };
     }
 
-    // Acessando dinamicamente o priceId
-    const priceId = session.line_items.data[0]?.price?.id;
     const plan = priceId === process.env.STRIPE_YEARLY_PRICE_ID ? 'yearly' : 'monthly';
-
 
     if (!userId) {
         console.error(`Webhook Error: checkout.session.completed não continha o userId nos metadados.`);
@@ -37,7 +38,8 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
         } else if (plan === 'monthly') {
           expirationDate.setMonth(now.getMonth() + 1);
         } else {
-            console.error(`Tipo de plano inválido no webhook: ${plan}`);
+            // Isso não deve acontecer se os priceIds estiverem corretos
+            console.error(`Tipo de plano inválido determinado pelo priceId no webhook: ${plan}`);
             return { success: false, error: `Tipo de plano inválido: ${plan}` };
         }
 
@@ -71,9 +73,11 @@ export async function POST(req: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
       
+      // Verificamos se o pagamento foi bem-sucedido
       if (session.payment_status === 'paid') {
         const result = await grantAccessAfterCheckout(session);
         if (!result.success) {
+            // Retorna um erro 500 se a concessão de acesso falhar
             return NextResponse.json({ error: result.error }, { status: 500 });
         }
       }
@@ -85,3 +89,4 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ received: true });
 }
+

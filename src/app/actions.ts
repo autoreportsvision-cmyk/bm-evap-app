@@ -34,7 +34,7 @@ export async function createStripeCheckoutSession(plan: 'monthly' | 'yearly', us
     return { success: false, error: 'auth/no-user-id' };
   }
   
-  // A verificação agora está na inicialização em src/lib/stripe.ts.
+  // A verificação da chave da API agora está na inicialização em src/lib/stripe.ts.
   // Se chegarmos aqui, a chave da API existe.
 
   const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
@@ -62,11 +62,15 @@ export async function createStripeCheckoutSession(plan: 'monthly' | 'yearly', us
       mode: 'payment', // Alterado para 'payment' para pagamentos únicos
       metadata: {
         userId: userId,
-        plan: plan,
+        plan: plan, // Embora o webhook não precise mais disso, pode ser útil para referência
       },
       success_url: `${app_url}/?payment_success=true`,
       cancel_url: `${app_url}/pricing?payment_canceled=true`,
     });
+
+    if (!session.url) {
+      return { success: false, error: 'A sessão de checkout do Stripe foi criada, mas não retornou uma URL.' };
+    }
 
     return { success: true, url: session.url };
 
