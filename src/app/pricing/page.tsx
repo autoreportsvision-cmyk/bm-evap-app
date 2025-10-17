@@ -12,23 +12,21 @@ export default function PricingPage() {
     const { user } = useUser();
     const router = useRouter();
 
-    // These now point to the pre-created Stripe Payment Links
     const monthlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK;
     const yearlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK;
 
-    const handleRedirect = (url: string | undefined) => {
+    const handleRedirect = (paymentLink: string | undefined, plan: 'monthly' | 'yearly') => {
         if (!user) {
-            // If user is not logged in, redirect to login page first.
-            // After login, they should be sent back here.
             router.push('/login?redirect=/pricing');
             return;
         }
-        if (url) {
-            // Append the user's UID to the Stripe Payment Link URL.
-            // Stripe will pass this ID to the webhook, so we know who to grant access to.
-            const urlWithUser = new URL(url);
-            urlWithUser.searchParams.append('client_reference_id', user.uid);
-            window.location.href = urlWithUser.toString();
+        if (paymentLink) {
+            const url = new URL(paymentLink);
+            url.searchParams.append('client_reference_id', user.uid);
+            // Os metadados agora são configurados no próprio link de pagamento do Stripe, mas podemos adicionar como parâmetro também.
+            // Isso garante que o webhook receba a informação do plano.
+            url.searchParams.append('metadata[plan]', plan); 
+            window.location.href = url.toString();
         } else {
             console.error("Stripe Payment Link is not configured in .env file.");
             alert("A funcionalidade de pagamento não está configurada corretamente. Verifique as variáveis de ambiente.");
@@ -80,7 +78,7 @@ export default function PricingPage() {
                         <CardFooter>
                             <Button 
                                 className="w-full" 
-                                onClick={() => handleRedirect(monthlyPaymentLink)} 
+                                onClick={() => handleRedirect(monthlyPaymentLink, 'monthly')} 
                                 disabled={!monthlyPaymentLink}>
                                 Comprar Acesso Mensal
                             </Button>
@@ -111,7 +109,7 @@ export default function PricingPage() {
                         <CardFooter>
                             <Button 
                                 className="w-full" 
-                                onClick={() => handleRedirect(yearlyPaymentLink)} 
+                                onClick={() => handleRedirect(yearlyPaymentLink, 'yearly')} 
                                 disabled={!yearlyPaymentLink}>
                                 Comprar Acesso Anual
                             </Button>
