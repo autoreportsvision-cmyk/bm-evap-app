@@ -25,23 +25,15 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
             return { success: false, error: `Usuário não encontrado.` };
         }
 
-        // Tenta obter o priceId diretamente da sessão, se possível
-        let priceId: string | undefined;
-
-        // Se a sessão de checkout incluiu os line_items, eles estarão aqui
-        if (session.line_items && session.line_items.data.length > 0) {
-            priceId = session.line_items.data[0].price?.id;
-        } else {
-            // Como fallback, busca os line_items separadamente. Isso é menos eficiente, mas mais robusto.
-            console.log(`Fallback: buscando line_items para a sessão ${session.id}`);
-            const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 1 });
-            priceId = lineItems.data[0]?.price?.id;
-        }
+        // Os line_items estarão disponíveis aqui porque expandimos a sessão antes de chamar esta função.
+        const lineItems = session.line_items;
         
-        if (!priceId) {
+        if (!lineItems || lineItems.data.length === 0 || !lineItems.data[0].price) {
             console.error(`Webhook Error: Não foi possível encontrar o price_id nos line_items da sessão: ${session.id}. Dados da sessão:`, JSON.stringify(session, null, 2));
             return { success: false, error: 'Não foi possível identificar o item comprado.' };
         }
+        
+        const priceId = lineItems.data[0].price.id;
 
         const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
         const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
@@ -101,13 +93,15 @@ export async function POST(req: NextRequest) {
       
       // Verificamos se o pagamento foi bem-sucedido
       if (session.payment_status === 'paid') {
-        // Expande os line_items para garantir que tenhamos o priceId
+        // Expande a sessão para GARANTIR que tenhamos o priceId dentro dos line_items.
         const sessionWithLineItems = await stripe.checkout.sessions.retrieve(
             session.id,
             { expand: ['line_items'] }
         );
 
+        // **A CORREÇÃO ESTÁ AQUI:** Passamos a sessão expandida para a função.
         const result = await grantAccessAfterCheckout(sessionWithLineItems);
+
         if (!result.success) {
             // Retorna um erro 500 se a concessão de acesso falhar
             return NextResponse.json({ error: result.error }, { status: 500 });
