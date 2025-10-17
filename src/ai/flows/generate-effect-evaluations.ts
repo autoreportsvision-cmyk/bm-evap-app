@@ -33,49 +33,25 @@ export type GenerateEffectEvaluationsInput = z.infer<
   typeof GenerateEffectEvaluationsInputSchema
 >;
 
-// The output is a raw string, not a JSON object.
 export type GenerateEffectEvaluationsOutput = string;
 
-export async function generateEffectEvaluations(
-  input: GenerateEffectEvaluationsInput
-): Promise<GenerateEffectEvaluationsOutput> {
-  const currentDate = new Date().toLocaleString('pt-BR');
-  // Stringify the effect data before passing it to the flow
-  const stringifiedInput = {
-    ...input,
-    currentDate,
-    effect1: JSON.stringify(input.effect1, null, 2),
-    effect2: JSON.stringify(input.effect2, null, 2),
-    effect3: JSON.stringify(input.effect3, null, 2),
-    effect4: JSON.stringify(input.effect4, null, 2),
-    effect5: JSON.stringify(input.effect5, null, 2),
-  };
 
-  return generateEvaluationsFlow(stringifiedInput);
-}
-
-// The input schema for the prompt now expects the effect data as strings.
 const PromptInputSchema = z.object({
     prompt: z.string(),
     currentDate: z.string(),
     overallSummary: z.string(),
-    effect1: z.string(),
-    effect2: z.string(),
-    effect3: z.string(),
-    effect4: z.string(),
-    effect5: z.string(),
+    effect1: EffectDataSchema,
+    effect2: EffectDataSchema,
+    effect3: EffectDataSchema,
+    effect4: EffectDataSchema,
+    effect5: EffectDataSchema,
 });
 
-
-const generateEvaluationsFlow = ai.defineFlow(
-  {
-    name: 'generateEvaluationsFlow',
-    inputSchema: PromptInputSchema,
-    outputSchema: z.string(),
-  },
-  async (input) => {
-
-    const promptText = `
+const evaluationPrompt = ai.definePrompt({
+    name: 'evaluationPrompt',
+    input: { schema: PromptInputSchema },
+    output: { format: 'text' },
+    prompt: `
 {{{prompt}}}
 
 ### Dados do Processo para Análise:
@@ -83,20 +59,36 @@ Data da Análise: {{{currentDate}}}
 Resumo Geral: {{{overallSummary}}}
 
 Dados por Efeito:
-*   Efeito 1: {{{effect1}}}
-*   Efeito 2: {{{effect2}}}
-*   Efeito 3: {{{effect3}}}
-*   Efeito 4: {{{effect4}}}
-*   Efeito 5: {{{effect5}}}
-`;
+*   Efeito 1: {{{json effect1}}}
+*   Efeito 2: {{{json effect2}}}
+*   Efeito 3: {{{json effect3}}}
+*   Efeito 4: {{{json effect4}}}
+*   Efeito 5: {{{json effect5}}}
+`
+});
 
-    const result = await ai.generate({
-        prompt: promptText,
-        model: 'googleai/gemini-2.5-flash',
-        // Use handlebars to substitute variables
-        templateData: input
+
+const generateEvaluationsFlow = ai.defineFlow(
+  {
+    name: 'generateEvaluationsFlow',
+    inputSchema: GenerateEffectEvaluationsInputSchema,
+    outputSchema: z.string(),
+  },
+  async (input) => {
+    const currentDate = new Date().toLocaleString('pt-BR');
+    
+    const { output } = await evaluationPrompt({
+        ...input,
+        currentDate,
     });
-
-    return result.text;
+    
+    return output!;
   }
 );
+
+
+export async function generateEffectEvaluations(
+  input: GenerateEffectEvaluationsInput
+): Promise<GenerateEffectEvaluationsOutput> {
+    return generateEvaluationsFlow(input);
+}
