@@ -8,16 +8,11 @@ import { getFirestoreAdmin } from '@/firebase/admin';
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
-    // client_reference_id é passado do link de pagamento
-    const userId = session.client_reference_id;
-    // O objeto payment_link contém os metadados que podemos usar
-    const paymentLink = await stripe.paymentLinks.retrieve(session.payment_link!);
-    
-    // Altera para buscar a chave 'mês' que o usuário configurou no Stripe.
-    const plan = paymentLink.metadata?.mês as 'monthly' | 'yearly' | undefined;
+    const userId = session.metadata?.userId;
+    const plan = session.metadata?.plan as 'monthly' | 'yearly' | undefined;
 
     if (!userId || !plan) {
-        console.error('Webhook Error: checkout.session.completed não continha client_reference_id ou o link de pagamento não tinha a chave de metadados "mês" corretamente configurada.');
+        console.error(`Webhook Error: checkout.session.completed não continha os metadados necessários (userId: ${userId}, plan: ${plan}).`);
         return { success: false, error: 'Metadados ausentes na sessão de checkout.' };
     }
     
@@ -67,14 +62,21 @@ export async function POST(req: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
       
+      // A verificação de payment_status é importante.
       if (session.payment_status === 'paid') {
-        await grantAccessAfterCheckout(session);
+        const result = await grantAccessAfterCheckout(session);
+        if (!result.success) {
+            // Se algo der errado ao conceder acesso, retorne um erro 500 para que o Stripe possa tentar novamente.
+            return NextResponse.json({ error: result.error }, { status: 500 });
+        }
       }
       break;
     }
     default:
-      console.log(`Evento de webhook não manipulado: ${event.type}`);
+      // Não manipule outros eventos, apenas registre-os se necessário.
+      // console.log(`Evento de webhook não manipulado: ${event.type}`);
   }
 
+  // Retorne uma resposta 200 para o Stripe para confirmar o recebimento do evento.
   return NextResponse.json({ received: true });
 }

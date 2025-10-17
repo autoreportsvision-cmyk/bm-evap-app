@@ -5,6 +5,8 @@ import { generateEffectEvaluations } from '@/ai/flows/generate-effect-evaluation
 import type { GenerateEffectEvaluationsInput, GenerateEffectEvaluationsOutput } from '@/ai/flows/generate-effect-evaluations';
 import { chat } from '@/ai/flows/chat-flow';
 import type { ChatInput } from '@/ai/flows/chat-flow';
+import { stripe } from '@/lib/stripe';
+import Stripe from 'stripe';
 
 export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
   try {
@@ -26,39 +28,50 @@ export async function getChatResponse(input: ChatInput): Promise<{ success: bool
     }
 }
 
-export async function createStripeRedirect(plan: 'monthly' | 'yearly', userId: string): Promise<{ success: boolean; url?: string; error?: string }> {
+export async function createStripeCheckoutSession(plan: 'monthly' | 'yearly', userId: string): Promise<{ success: boolean; url?: string | null; error?: string }> {
   if (!userId) {
     return { success: false, error: 'auth/no-user-id' };
   }
-  
+  if (!process.env.STRIPE_API_KEY) {
+     return { success: false, error: 'A chave da API do Stripe não está configurada no servidor.' };
+  }
+
+  const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
+  const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
+  const app_url = process.env.NEXT_PUBLIC_APP_URL;
+
+  if (!monthlyPriceId || !yearlyPriceId) {
+      return { success: false, error: 'Os IDs de preço do Stripe não estão configurados nas variáveis de ambiente do servidor (STRIPE_MONTHLY_PRICE_ID, STRIPE_YEARLY_PRICE_ID).' };
+  }
+  if (!app_url) {
+      return { success: false, error: 'A URL do aplicativo (NEXT_PUBLIC_APP_URL) não está configurada nas variáveis de ambiente.' };
+  }
+
+  const priceId = plan === 'monthly' ? monthlyPriceId : yearlyPriceId;
+
   try {
-    const monthlyLink = process.env.STRIPE_MONTHLY_PAYMENT_LINK;
-    const yearlyLink = process.env.STRIPE_YEARLY_PAYMENT_LINK;
-    let paymentLink = plan === 'monthly' ? monthlyLink : yearlyLink;
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price: priceId,
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      // O client_reference_id é a forma legada. Usar metadados é mais flexível.
+      metadata: {
+        userId: userId,
+        plan: plan
+      },
+      success_url: `${app_url}/?payment_success=true`,
+      cancel_url: `${app_url}/pricing?payment_canceled=true`,
+    });
 
-    if (!paymentLink) {
-      const errorMessage = `O link de pagamento do Stripe para o plano "${plan}" não está configurado nas variáveis de ambiente do servidor.`;
-      console.error(errorMessage);
-      return { success: false, error: errorMessage };
-    }
-
-    if (!paymentLink.startsWith('https://buy.stripe.com/')) {
-        const errorMessage = `O link de pagamento para o plano "${plan}" ("${paymentLink}") não é uma URL de checkout do Stripe válida. Verifique o arquivo .env.`;
-        console.error(errorMessage);
-        return { success: false, error: errorMessage };
-    }
-
-    // Lógica inteligente para anexar o client_reference_id
-    // Remove qualquer parâmetro client_reference_id existente para evitar duplicatas.
-    const baseUrl = paymentLink.split('?')[0];
-
-    // Constrói a URL final de forma segura
-    const finalUrl = `${baseUrl}?client_reference_id=${userId}`;
-
-    return { success: true, url: finalUrl };
+    return { success: true, url: session.url };
 
   } catch (error: any) {
-    console.error("Erro ao criar o redirecionamento para o pagamento:", error);
-    return { success: false, error: error.message || 'Falha ao criar o redirecionamento para o pagamento.' };
+    console.error("Erro ao criar a sessão de checkout do Stripe:", error);
+    return { success: false, error: error.message || 'Falha ao criar a sessão de checkout.' };
   }
 }

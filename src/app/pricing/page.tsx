@@ -8,7 +8,7 @@ import { Check, Gem, Star, Loader } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createStripeRedirect } from '@/app/actions';
+import { createStripeCheckoutSession } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 export default function PricingPage() {
@@ -31,7 +31,7 @@ export default function PricingPage() {
             return;
         }
 
-        const result = await createStripeRedirect(plan, user.uid);
+        const result = await createStripeCheckoutSession(plan, user.uid);
 
         if (result.success && result.url) {
             window.location.href = result.url;
@@ -39,7 +39,7 @@ export default function PricingPage() {
             toast({
                 variant: 'destructive',
                 title: 'Erro no Pagamento',
-                description: result.error || 'Não foi possível redirecionar para o pagamento. Verifique a configuração do servidor e se o servidor foi reiniciado.',
+                description: result.error || 'Não foi possível redirecionar para o pagamento. Verifique as configurações do servidor.',
             });
             setIsRedirecting(null);
         }
