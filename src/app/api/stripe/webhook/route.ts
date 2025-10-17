@@ -8,29 +8,54 @@ import { getFirestoreAdmin } from '@/firebase/admin';
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
-    const userId = session.metadata?.userId;
-    const plan = session.metadata?.plan as 'monthly' | 'yearly' | undefined;
+    // Para Payment Links, o client_reference_id precisa ser passado na URL.
+    // Como ainda não estamos fazendo isso, vamos extrair o email e procurar o usuário.
+    const customerEmail = session.customer_details?.email;
+    const clientReferenceId = session.client_reference_id; // Pode ser nulo
+    const paymentLinkId = session.payment_link;
 
-
-    if (!userId || !plan) {
-        console.error(`Webhook Error: checkout.session.completed não continha userId ou plan nos metadados.`);
-        return { success: false, error: 'Metadados ausentes na sessão de checkout.' };
+    if (!customerEmail) {
+        console.error(`Webhook Error: checkout.session.completed não continha o email do cliente.`);
+        return { success: false, error: 'Email do cliente não encontrado na sessão de checkout.' };
     }
-    
+
     const firestoreAdmin = getFirestoreAdmin();
     try {
-        const userRef = firestoreAdmin.collection('users').doc(userId);
+        const usersRef = firestoreAdmin.collection('users');
+        const querySnapshot = await usersRef.where('email', '==', customerEmail).limit(1).get();
+
+        if (querySnapshot.empty) {
+            console.error(`Webhook Error: Nenhum usuário encontrado com o email: ${customerEmail}`);
+            return { success: false, error: `Usuário não encontrado.` };
+        }
         
+        const userDoc = querySnapshot.docs[0];
+        const userId = userDoc.id;
+        const userRef = userDoc.ref;
+
+        // Determine o plano com base no ID do Payment Link
+        const monthlyLink = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK?.split('/').pop();
+        const yearlyLink = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK?.split('/').pop();
+        
+        let plan: 'monthly' | 'yearly' | null = null;
+        if (paymentLinkId?.includes(monthlyLink!)) {
+            plan = 'monthly';
+        } else if (paymentLinkId?.includes(yearlyLink!)) {
+            plan = 'yearly';
+        }
+        
+        if (!plan) {
+            console.error(`Webhook Error: Não foi possível determinar o plano a partir do payment_link_id: ${paymentLinkId}`);
+            return { success: false, error: 'Não foi possível determinar o plano comprado.' };
+        }
+
         const now = new Date();
         const expirationDate = new Date(now);
 
         if (plan === 'yearly') {
           expirationDate.setFullYear(now.getFullYear() + 1);
-        } else if (plan === 'monthly') {
+        } else { // monthly
           expirationDate.setMonth(now.getMonth() + 1);
-        } else {
-            console.error(`Tipo de plano inválido recebido no webhook: ${plan}`);
-            return { success: false, error: `Tipo de plano inválido: ${plan}` };
         }
 
         await userRef.update({ 
@@ -41,8 +66,8 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
         console.log(`Acesso premium concedido para o usuário ${userId} com o plano ${plan}. Expira em ${expirationDate.toISOString()}`);
         return { success: true };
     } catch (error) {
-        console.error(`Erro ao atualizar o papel do usuário ${userId} no Firestore:`, error);
-        return { success: false, error: 'Falha ao atualizar o papel do usuário no Firestore.' };
+        console.error(`Erro ao processar o webhook para ${customerEmail}:`, error);
+        return { success: false, error: 'Falha ao processar o webhook e atualizar o usuário.' };
     }
 }
 

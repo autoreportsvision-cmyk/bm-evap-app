@@ -8,7 +8,6 @@ import { Check, Gem, Star, Loader } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { createStripeCheckoutSession } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 
 export default function PricingPage() {
@@ -17,7 +16,7 @@ export default function PricingPage() {
     const [isRedirecting, setIsRedirecting] = useState<string | null>(null);
     const { toast } = useToast();
 
-    const handleSubscribe = async (plan: 'monthly' | 'yearly') => {
+    const handleSubscribe = (plan: 'monthly' | 'yearly') => {
         setIsRedirecting(plan);
 
         if (!user) {
@@ -31,15 +30,26 @@ export default function PricingPage() {
             return;
         }
 
-        const result = await createStripeCheckoutSession(plan, user.uid);
+        let paymentLinkUrl: string | undefined;
 
-        if (result.success && result.url) {
-            window.location.href = result.url;
+        if (plan === 'monthly') {
+            paymentLinkUrl = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK;
+        } else {
+            paymentLinkUrl = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK;
+        }
+        
+        // Adiciona o email do usuário como um parâmetro de preenchimento para o Stripe
+        if (paymentLinkUrl && user.email) {
+            paymentLinkUrl += `?prefilled_email=${encodeURIComponent(user.email)}`;
+        }
+
+        if (paymentLinkUrl) {
+            window.location.href = paymentLinkUrl;
         } else {
             toast({
                 variant: 'destructive',
-                title: 'Erro no Pagamento',
-                description: result.error || 'Não foi possível redirecionar para o pagamento. Verifique as configurações do servidor.',
+                title: 'Erro de Configuração',
+                description: `O link de pagamento para o plano "${plan}" não está configurado nas variáveis de ambiente.`,
             });
             setIsRedirecting(null);
         }
