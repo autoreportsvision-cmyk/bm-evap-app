@@ -149,7 +149,7 @@ export default function EvaluationsTab() {
                     <CardTitle>Prompt da IA</CardTitle>
                     <CardDescription>
                     Altere o prompt abaixo para customizar a análise gerada pela inteligência artificial. 
-                    As variáveis como `${'{{{currentDate}}}'}`, `${'{{{overallSummary}}}'` e `${'{{{effectsJson}}}'` serão substituídas pelos dados do processo.
+                    As variáveis como `'''${'{{{currentDate}}}'}'''`, `'''${'{{{overallSummary}}}'}'''` e `'''${'{{{effectsJson}}}'}'''` serão substituídas pelos dados do processo.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
