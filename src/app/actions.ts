@@ -6,7 +6,7 @@ import type { GenerateEffectEvaluationsInput, GenerateEffectEvaluationsOutput } 
 import { chat } from '@/ai/flows/chat-flow';
 import type { ChatInput } from '@/ai/flows/chat-flow';
 import { stripe } from '@/lib/stripe';
-import type Stripe from 'stripe';
+import { redirect } from 'next/navigation';
 
 export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
   try {
@@ -32,7 +32,7 @@ export async function createCheckoutSession(
   uid: string,
   priceId: string,
   plan: 'monthly' | 'yearly'
-): Promise<{ sessionId: string }> {
+): Promise<void> {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
   if (!process.env.STRIPE_API_KEY) {
@@ -45,8 +45,9 @@ export async function createCheckoutSession(
     throw new Error('A URL da aplicação (NEXT_PUBLIC_APP_URL) não está configurada nas variáveis de ambiente.');
   }
 
+  let session;
   try {
-    const session = await stripe.checkout.sessions.create({
+    session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
@@ -63,17 +64,19 @@ export async function createCheckoutSession(
       },
     });
 
-    if (!session.id) {
-        throw new Error("A sessão de checkout retornada pelo Stripe não continha um ID.");
-    }
-
-    // Return a plain object with just the session ID
-    return { sessionId: session.id };
-
   } catch (error) {
     console.error('Error in createCheckoutSession:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-    // Re-throw a more specific error to be caught by the client-side caller.
+    // Lançar um erro que o cliente pode tratar, se necessário, embora o redirect seja o caminho feliz.
     throw new Error(`Falha ao criar sessão de checkout: ${errorMessage}`);
+  }
+
+  // Redireciona o usuário para a URL de checkout do Stripe.
+  // Esta chamada deve estar fora do bloco try/catch.
+  if (session?.url) {
+    redirect(session.url);
+  } else {
+    // Caso a sessão não tenha uma URL por algum motivo.
+    throw new Error('Não foi possível obter a URL de checkout do Stripe.');
   }
 }

@@ -10,7 +10,6 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { createCheckoutSession } from '../actions';
 import Link from 'next/link';
-import { getStripe } from '@/lib/stripe-client';
 
 export default function PricingPage() {
     const { user, isUserLoading } = useUser();
@@ -19,11 +18,11 @@ export default function PricingPage() {
     const [loadingPlan, setLoadingPlan] = useState<'monthly' | 'yearly' | null>(null);
 
     const handleSubscribe = async (plan: 'monthly' | 'yearly') => {
-        if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+        if (!process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID || !process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID) {
             toast({
                 variant: 'destructive',
                 title: 'Erro de Configuração',
-                description: 'A chave publicável do Stripe (NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) não está configurada.',
+                description: 'Os IDs de preço do Stripe (NEXT_PUBLIC_STRIPE_..._PRICE_ID) não estão configurados.',
             });
             return;
         }
@@ -37,38 +36,14 @@ export default function PricingPage() {
             ? process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID
             : process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID;
 
-        if (!priceId) {
-             toast({
-                variant: 'destructive',
-                title: 'Erro de Configuração',
-                description: `O ID de preço para o plano ${plan === 'monthly' ? 'mensal' : 'anual'} não está configurado.`,
-            });
-            return;
-        }
-
         setLoadingPlan(plan);
         
         try {
-            // 1. Create the checkout session on the server.
-            // This now returns a plain object: { sessionId: '...' }
-            const { sessionId } = await createCheckoutSession(user.uid, priceId, plan);
-
-            // 2. Get the Stripe.js instance
-            const stripe = await getStripe();
-            if (!stripe) {
-                throw new Error("Não foi possível inicializar o Stripe. Verifique a chave publicável.");
-            }
-
-            // 3. Redirect to checkout
-            const { error } = await stripe.redirectToCheckout({
-                sessionId,
-            });
-
-            // This point is only reached if there's an immediate error.
-            if (error) {
-                throw new Error(error.message);
-            }
-            // If successful, the user is redirected and this code is not reached.
+            // A Server Action agora cuida de tudo, incluindo o redirecionamento.
+            // Não precisamos mais do `getStripe` ou `redirectToCheckout` no cliente.
+            await createCheckoutSession(user.uid, priceId, plan);
+            // Se a linha acima for bem-sucedida, o usuário já terá sido redirecionado.
+            // O código abaixo só executará se o redirecionamento falhar por algum motivo inesperado.
 
         } catch (error) {
             console.error('Falha ao criar ou redirecionar para a sessão de checkout:', error);
@@ -78,6 +53,7 @@ export default function PricingPage() {
                 description: error instanceof Error ? error.message : 'Ocorreu um erro ao tentar redirecionar para o pagamento. Tente novamente.',
             });
         } finally {
+            // Se houver um erro, o estado de carregamento é resetado.
             setLoadingPlan(null);
         }
     };
