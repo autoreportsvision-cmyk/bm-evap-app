@@ -59,7 +59,7 @@ export async function createStripeCheckoutSession(plan: 'monthly' | 'yearly', us
           quantity: 1,
         },
       ],
-      mode: 'subscription', // Alterado para 'subscription' para planos recorrentes
+      mode: 'payment', // Alterado para 'payment' para pagamentos únicos
       metadata: {
         userId: userId,
         plan: plan,
