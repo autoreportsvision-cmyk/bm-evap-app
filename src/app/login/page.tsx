@@ -76,7 +76,6 @@ export default function LoginPage() {
       }
       router.push('/');
     } catch (error: any) {
-      console.error("Authentication Error Code:", error.code);
       let description = 'Ocorreu um erro desconhecido. Tente novamente.';
       
       switch (error.code) {
