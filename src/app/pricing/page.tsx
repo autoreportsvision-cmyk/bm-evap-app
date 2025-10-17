@@ -10,14 +10,19 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 
+// Read environment variables at the component's top level for reliability
+const monthlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK;
+const yearlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK;
+
+
 export default function PricingPage() {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
-    const [isRedirecting, setIsRedirecting] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState<string | null>(null);
     const { toast } = useToast();
 
     const handleSubscribe = (plan: 'monthly' | 'yearly') => {
-        setIsRedirecting(plan);
+        setIsLoading(plan);
 
         if (!user) {
             toast({
@@ -26,33 +31,41 @@ export default function PricingPage() {
                 variant: 'destructive',
             });
             router.push('/login?redirect=/pricing');
-            setIsRedirecting(null);
+            setIsLoading(null);
             return;
         }
 
         let paymentLinkUrl: string | undefined;
 
         if (plan === 'monthly') {
-            paymentLinkUrl = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK;
+            paymentLinkUrl = monthlyPaymentLink;
         } else {
-            paymentLinkUrl = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK;
+            paymentLinkUrl = yearlyPaymentLink;
         }
         
-        // Adiciona o email do usuário como um parâmetro de preenchimento para o Stripe
-        if (paymentLinkUrl && user.email) {
-            paymentLinkUrl += `?prefilled_email=${encodeURIComponent(user.email)}`;
-        }
-
-        if (paymentLinkUrl) {
-            window.location.href = paymentLinkUrl;
-        } else {
-            toast({
+        if (!paymentLinkUrl) {
+             toast({
                 variant: 'destructive',
                 title: 'Erro de Configuração',
-                description: `O link de pagamento para o plano "${plan}" não está configurado nas variáveis de ambiente.`,
+                description: `O link de pagamento para o plano "${plan}" não está configurado nas variáveis de ambiente. Verifique o arquivo .env.`,
             });
-            setIsRedirecting(null);
+            setIsLoading(null);
+            return;
         }
+        
+        let finalUrl = paymentLinkUrl;
+        // Add the user's email as a pre-fill parameter for Stripe
+        if (user.email) {
+            // Check if the URL already has query params
+            if (finalUrl.includes('?')) {
+                finalUrl += `&prefilled_email=${encodeURIComponent(user.email)}`;
+            } else {
+                finalUrl += `?prefilled_email=${encodeURIComponent(user.email)}`;
+            }
+        }
+        
+        // Redirect to Stripe
+        window.location.href = finalUrl;
     };
 
     const features = [
@@ -63,8 +76,6 @@ export default function PricingPage() {
         "Suporte prioritário."
     ];
     
-    const isLoading = isUserLoading || !!isRedirecting;
-
     return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
             <div className="absolute top-4 left-4">
@@ -103,8 +114,8 @@ export default function PricingPage() {
                             <Button 
                                 className="w-full" 
                                 onClick={() => handleSubscribe('monthly')} 
-                                disabled={isLoading}>
-                                {isRedirecting === 'monthly' ? <Loader className="animate-spin" /> : 'Comprar Acesso Mensal'}
+                                disabled={isUserLoading || !!isLoading}>
+                                {isLoading === 'monthly' ? <Loader className="animate-spin" /> : 'Comprar Acesso Mensal'}
                             </Button>
                         </CardFooter>
                     </Card>
@@ -134,8 +145,8 @@ export default function PricingPage() {
                             <Button 
                                 className="w-full" 
                                 onClick={() => handleSubscribe('yearly')} 
-                                disabled={isLoading}>
-                                 {isRedirecting === 'yearly' ? <Loader className="animate-spin" /> : 'Comprar Acesso Anual'}
+                                disabled={isUserLoading || !!isLoading}>
+                                 {isLoading === 'yearly' ? <Loader className="animate-spin" /> : 'Comprar Acesso Anual'}
                             </Button>
                         </CardFooter>
                     </Card>
