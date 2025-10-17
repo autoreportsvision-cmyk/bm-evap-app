@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -34,20 +35,24 @@ export default function MainTabs() {
     if (!userProfile) return false;
     if (userProfile.role === 'admin') return true;
 
-    if (userProfile.role === 'premium' && userProfile.accessExpiration) {
-      // The accessExpiration could be a Firestore Timestamp object or a JS Date object.
-      // We need to handle both cases to safely get a Date object.
+    if (userProfile.role === 'premium') {
+      // Se não houver data de expiração, o acesso é permanente (concedido manualmente).
+      if (!userProfile.accessExpiration) {
+        return true;
+      }
+      
+      // Se houver data de expiração, verifique se ainda não expirou.
       const expirationDate = (userProfile.accessExpiration as any).seconds
         ? new Date((userProfile.accessExpiration as any).seconds * 1000)
         : userProfile.accessExpiration instanceof Date
         ? userProfile.accessExpiration
         : null;
       
-      // If we have a valid date, check if it's in the future.
       if (expirationDate) {
         return expirationDate > new Date();
       }
     }
+    
     return false;
   }, [userProfile]);
 
