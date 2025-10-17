@@ -52,7 +52,7 @@ export async function createCheckoutSession(
       payment_method_types: ['card'],
       line_items: [
         {
-          price: stripePriceId, // Use the validated variable here
+          price: stripePriceId,
           quantity: 1,
         },
       ],
