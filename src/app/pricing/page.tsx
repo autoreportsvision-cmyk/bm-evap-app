@@ -49,12 +49,9 @@ export default function PricingPage() {
         setLoadingPlan(plan);
         
         try {
-            // 1. Create the checkout session on the server
-            const session = await createCheckoutSession(user.uid, priceId, plan);
-
-            if (!session.id) {
-                throw new Error("A sessão de checkout retornada pelo servidor é inválida.");
-            }
+            // 1. Create the checkout session on the server.
+            // This now returns a plain object: { sessionId: '...' }
+            const { sessionId } = await createCheckoutSession(user.uid, priceId, plan);
 
             // 2. Get the Stripe.js instance
             const stripe = await getStripe();
@@ -64,7 +61,7 @@ export default function PricingPage() {
 
             // 3. Redirect to checkout
             const { error } = await stripe.redirectToCheckout({
-                sessionId: session.id,
+                sessionId,
             });
 
             // This point is only reached if there's an immediate error.

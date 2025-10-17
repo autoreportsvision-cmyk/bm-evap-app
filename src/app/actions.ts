@@ -6,7 +6,6 @@ import type { GenerateEffectEvaluationsInput, GenerateEffectEvaluationsOutput } 
 import { chat } from '@/ai/flows/chat-flow';
 import type { ChatInput } from '@/ai/flows/chat-flow';
 import { stripe } from '@/lib/stripe';
-import { headers } from 'next/headers';
 import type Stripe from 'stripe';
 
 export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
@@ -29,12 +28,11 @@ export async function getChatResponse(input: ChatInput): Promise<{ success: bool
     }
 }
 
-
 export async function createCheckoutSession(
   uid: string,
   priceId: string,
   plan: 'monthly' | 'yearly'
-): Promise<Stripe.Checkout.Session> {
+): Promise<{ sessionId: string }> {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
   if (!process.env.STRIPE_API_KEY) {
@@ -64,7 +62,14 @@ export async function createCheckoutSession(
         plan: plan,
       },
     });
-    return session;
+
+    if (!session.id) {
+        throw new Error("A sessão de checkout retornada pelo Stripe não continha um ID.");
+    }
+
+    // Return a plain object with just the session ID
+    return { sessionId: session.id };
+
   } catch (error) {
     console.error('Error in createCheckoutSession:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
@@ -72,4 +77,3 @@ export async function createCheckoutSession(
     throw new Error(`Falha ao criar sessão de checkout: ${errorMessage}`);
   }
 }
-
