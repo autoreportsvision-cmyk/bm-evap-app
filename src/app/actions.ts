@@ -29,45 +29,34 @@ export async function getChatResponse(input: ChatInput): Promise<{ success: bool
     }
 }
 
-export async function createStripeRedirect(plan: 'monthly' | 'yearly'): Promise<void> {
+export async function createStripeRedirect(plan: 'monthly' | 'yearly'): Promise<{ success: boolean; url?: string; error?: string }> {
   const sessionCookie = headers().get('cookie')?.split('; ').find(c => c.startsWith('__session='));
   if (!sessionCookie) {
-    redirect('/login?redirect=/pricing');
+    return { success: false, error: 'auth/no-session-cookie' };
   }
 
   const session = sessionCookie.split('=')[1];
   const authAdmin = getAuthAdmin();
-  let decodedToken;
-
+  
   try {
-    decodedToken = await authAdmin.verifySessionCookie(session, true);
+    const decodedToken = await authAdmin.verifySessionCookie(session, true);
+    const userId = decodedToken.uid;
+
+    const monthlyLink = process.env.STRIPE_MONTHLY_PAYMENT_LINK;
+    const yearlyLink = process.env.STRIPE_YEARLY_PAYMENT_LINK;
+    const paymentLink = plan === 'monthly' ? monthlyLink : yearlyLink;
+
+    if (!paymentLink) {
+      throw new Error(`Stripe payment link for "${plan}" plan is not configured.`);
+    }
+
+    const urlWithUser = new URL(paymentLink);
+    urlWithUser.searchParams.append('client_reference_id', userId);
+
+    return { success: true, url: urlWithUser.toString() };
+
   } catch (error) {
-    console.error("Error verifying session cookie, redirecting to login:", error);
-    // If verification fails, redirect to login. The redirect call is outside the catch block.
-    redirect('/login?redirect=/pricing');
+    console.error("Error creating Stripe redirect:", error);
+    return { success: false, error: 'auth/session-expired' };
   }
-
-  const userId = decodedToken.uid;
-  if (!userId) {
-    console.error("Could not get user from session.");
-    // This case should ideally not be reached if verifySessionCookie succeeds.
-    redirect('/login?redirect=/pricing');
-  }
-
-  // Use STRIPE_... instead of NEXT_PUBLIC_... because this now only runs on the server.
-  const monthlyLink = process.env.STRIPE_MONTHLY_PAYMENT_LINK;
-  const yearlyLink = process.env.STRIPE_YEARLY_PAYMENT_LINK;
-
-  const paymentLink = plan === 'monthly' ? monthlyLink : yearlyLink;
-
-  if (!paymentLink) {
-    // This will cause an error page to be shown, which is appropriate.
-    throw new Error(`Stripe payment link for "${plan}" plan is not configured in environment variables.`);
-  }
-
-  const urlWithUser = new URL(paymentLink);
-  urlWithUser.searchParams.append('client_reference_id', userId);
-
-  // The redirect call must happen outside of a try/catch block.
-  redirect(urlWithUser.toString());
 }

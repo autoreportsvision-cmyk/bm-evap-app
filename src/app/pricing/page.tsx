@@ -25,26 +25,27 @@ export default function PricingPage() {
             return;
         }
 
-        if (user) {
-            try {
-                // This server action will handle the redirect.
-                // It will throw an error if something goes wrong on the server,
-                // which we can catch here.
-                await createStripeRedirect(plan);
-                // The line above will redirect and this component will unmount,
-                // so we don't need to worry about resetting the loading state.
-            } catch (error: any) {
-                console.error("Stripe Redirect Error:", error);
+        const result = await createStripeRedirect(plan);
+
+        if (result.success && result.url) {
+            window.location.href = result.url;
+        } else {
+            if (result.error?.includes('auth')) {
                 toast({
                     variant: 'destructive',
-                    title: 'Erro no Pagamento',
-                    description: error.message || 'Não foi possível redirecionar para o pagamento. Verifique a configuração.',
+                    title: 'Sessão Expirada',
+                    description: 'Sua sessão expirou. Por favor, faça login novamente.',
                 });
-                setIsRedirecting(null);
+                router.push('/login?redirect=/pricing');
+            } else {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Erro no Pagamento',
+                    description: result.error || 'Não foi possível redirecionar para o pagamento. Verifique a configuração.',
+                });
             }
+            setIsRedirecting(null);
         }
-        // No need for an else, if the user is not loaded yet,
-        // the button is disabled and the user can click again once it is.
     };
 
     const features = [
