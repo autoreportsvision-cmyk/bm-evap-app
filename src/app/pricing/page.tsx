@@ -20,6 +20,15 @@ export default function PricingPage() {
     const [loading, setLoading] = useState(false);
 
     const handleSubscribe = async () => {
+        if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+            toast({
+                variant: 'destructive',
+                title: 'Erro de Configuração',
+                description: 'A chave publicável do Stripe não está configurada. Verifique as variáveis de ambiente.',
+            });
+            return;
+        }
+
         if (!user) {
             router.push('/login?redirect=/pricing');
             return;
@@ -41,7 +50,10 @@ export default function PricingPage() {
                     });
                      setLoading(false);
                 }
+                // If redirectToCheckout is successful, the user is redirected and this component will unmount.
+                // No need to set loading to false here.
             } else {
+                // This case is already handled by the initial check, but kept for safety.
                 toast({
                     variant: 'destructive',
                     title: 'Erro de Configuração',
