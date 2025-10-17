@@ -54,7 +54,7 @@ export default function PricingPage() {
                             <CardContent className="space-y-6">
                                 <div className="space-y-2 text-center">
                                     <p className="text-4xl font-bold">R$ 12,90</p>
-                                    <p className="text-xs text-muted-foreground">Pagamento único. Acesso por 30 dias.</p>
+                                    <p className="text-xs text-muted-foreground">Pagamento único. Cartão de Crédito ou Pix.</p>
                                 </div>
                                 <ul className="space-y-3 text-sm">
                                     {features.map((feature, index) => (
@@ -89,7 +89,7 @@ export default function PricingPage() {
                             <CardContent className="space-y-6">
                                 <div className="space-y-2 text-center">
                                     <p className="text-4xl font-bold">R$ 39,90</p>
-                                    <p className="text-xs text-muted-foreground">Pagamento único. Acesso por 1 ano.</p>
+                                    <p className="text-xs text-muted-foreground">Pagamento único. Cartão de Crédito ou Pix.</p>
                                 </div>
                                 <ul className="space-y-3 text-sm">
                                     {features.map((feature, index) => (
