@@ -9,7 +9,7 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
     const clientReferenceId = session.client_reference_id;
-    // CORREÇÃO: O campo correto é `payment_link`, não `payment_link_id`
+    // CORREÇÃO: O campo correto é `payment_link`
     const paymentLink = session.payment_link;
 
     if (!clientReferenceId) {
@@ -17,7 +17,6 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
         return { success: false, error: 'User ID (client_reference_id) não encontrado na sessão de checkout.', status: 400 };
     }
     
-    // CORREÇÃO: Usando a variável `paymentLink` que foi corrigida
     if (!paymentLink) {
         console.error('Webhook Error: payment_link não encontrado na sessão do Stripe.');
         return { success: false, error: 'ID do Link de Pagamento (payment_link) não encontrado na sessão.', status: 400 };
