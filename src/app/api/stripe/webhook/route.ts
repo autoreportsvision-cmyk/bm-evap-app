@@ -12,10 +12,12 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
     const userId = session.client_reference_id;
     // O objeto payment_link contém os metadados que podemos usar
     const paymentLink = await stripe.paymentLinks.retrieve(session.payment_link!);
-    const plan = paymentLink.metadata?.plan as 'monthly' | 'yearly' | undefined;
+    
+    // Altera para buscar a chave 'mês' que o usuário configurou no Stripe.
+    const plan = paymentLink.metadata?.mês as 'monthly' | 'yearly' | undefined;
 
     if (!userId || !plan) {
-        console.error('Webhook Error: checkout.session.completed não continha client_reference_id ou o link de pagamento não tinha o plano nos metadados.');
+        console.error('Webhook Error: checkout.session.completed não continha client_reference_id ou o link de pagamento não tinha a chave de metadados "mês" corretamente configurada.');
         return { success: false, error: 'Metadados ausentes na sessão de checkout.' };
     }
     
