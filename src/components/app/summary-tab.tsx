@@ -45,6 +45,7 @@ export default function SummaryTab() {
                       <TableHead className="text-right">Vapor Gerado (t/h)</TableHead>
                       <TableHead className="text-right">Taxa Evaporação (%)</TableHead>
                       <TableHead className="text-right">Eficiência (%)</TableHead>
+                      <TableHead className="text-right">Área (m²)</TableHead>
                       <TableHead className="text-right">kg Vapor/m²</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -58,6 +59,7 @@ export default function SummaryTab() {
                         <TableCell className="text-right">{effect.vaporGerado}</TableCell>
                         <TableCell className="text-right">{effect.taxaEvaporacao}</TableCell>
                         <TableCell className="text-right">{effect.eficiencia}</TableCell>
+                        <TableCell className="text-right">{effect.area.toFixed(0)}</TableCell>
                         <TableCell className="text-right">{effect.kgVaporM2}</TableCell>
                     </TableRow>
                 ))}

@@ -58,6 +58,7 @@ export type EffectSummaryData = {
   taxaEvaporacao: number; // This is in % for the summary table
   eficiencia: number;
   kgVaporM2: number;
+  area: number;
 };
 
 

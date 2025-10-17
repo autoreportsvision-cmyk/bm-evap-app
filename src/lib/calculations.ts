@@ -142,6 +142,7 @@ export function performCalculations(data: EvaporationData): CalculatedData {
         taxaEvaporacao: parseFloat(taxaEvaporacaoPercent.toFixed(2)), // Usa o valor em porcentagem
         eficiencia: parseFloat(effectEfficiency[index].efficiency.toFixed(2)),
         kgVaporM2: parseFloat(kgVaporPorM2[index].value.toFixed(2)),
+        area: areas[index],
     }
   });
 
