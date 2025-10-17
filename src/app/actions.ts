@@ -42,7 +42,6 @@ export async function createStripeRedirect(plan: 'monthly' | 'yearly', userId: s
       return { success: false, error: errorMessage };
     }
 
-    // Validação simples para garantir que a URL base pareça correta.
     if (!paymentLink.startsWith('https://buy.stripe.com/')) {
         const errorMessage = `O link de pagamento para o plano "${plan}" ("${paymentLink}") não é uma URL de checkout do Stripe válida. Verifique o arquivo .env.`;
         console.error(errorMessage);
