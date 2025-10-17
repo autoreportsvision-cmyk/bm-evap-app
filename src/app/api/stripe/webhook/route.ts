@@ -8,20 +8,27 @@ import { firestoreAdmin } from '@/firebase/admin';
 // This is your Stripe CLI webhook secret for testing your endpoint locally.
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-async function updateUserRoleWithExpiration(userId: string) {
+async function updateUserRoleWithExpiration(userId: string, plan: 'monthly' | 'yearly') {
     try {
         const userRef = firestoreAdmin.collection('users').doc(userId);
         
-        // Calculate expiration date (1 year from now)
         const now = new Date();
-        const expirationDate = new Date(now.setFullYear(now.getFullYear() + 1));
+        const expirationDate = new Date(now);
+
+        if (plan === 'yearly') {
+          expirationDate.setFullYear(now.getFullYear() + 1);
+        } else if (plan === 'monthly') {
+          expirationDate.setMonth(now.getMonth() + 1);
+        } else {
+            throw new Error(`Invalid plan type: ${plan}`);
+        }
 
         await userRef.update({ 
             role: 'premium',
-            accessExpiration: expirationDate, // Set the expiration date
+            accessExpiration: expirationDate,
         });
 
-        console.log(`User role updated to premium for ${userId} with expiration on ${expirationDate.toISOString()}`);
+        console.log(`User role updated to premium for ${userId} with plan ${plan}. Expiration on ${expirationDate.toISOString()}`);
         return { success: true };
     } catch (error) {
         console.error(`Error updating user role for ${userId}:`, error);
@@ -48,11 +55,13 @@ export async function POST(req: NextRequest) {
       
       if (session.payment_status === 'paid') {
         const userId = session.metadata?.userId;
-        if (userId) {
-          console.log(`Checkout session completed and paid for user: ${userId}`);
-          await updateUserRoleWithExpiration(userId);
+        const plan = session.metadata?.plan as 'monthly' | 'yearly';
+
+        if (userId && plan) {
+          console.log(`Checkout session completed and paid for user: ${userId} with plan: ${plan}`);
+          await updateUserRoleWithExpiration(userId, plan);
         } else {
-          console.error('Webhook received checkout.session.completed without userId in metadata.');
+          console.error('Webhook received checkout.session.completed without userId or plan in metadata.');
         }
       } else {
         console.log(`Checkout session completed for user ${session.metadata?.userId}, but payment status is ${session.payment_status}.`);
