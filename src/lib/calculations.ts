@@ -20,19 +20,29 @@ export function performCalculations(data: EvaporationData): CalculatedData {
     areaEfeito5,
    } = data;
 
-  const densidadeCaldo = (brixCaldo * 5) + 980; // Placeholder
-  
-  const tempCaldo = temperaturaCaldo && !isNaN(temperaturaCaldo) ? temperaturaCaldo : 100;
-  const consumoVaporTotal = (vazaoCaldo * (100 - tempCaldo) / 540) + (pressaoVapor * 1.5) ; // Placeholder
+  const densidadeCaldo = 1000 + (4.86 * brixCaldo) - (0.09 * Math.pow(brixCaldo, 2)); // Fórmula mais precisa
+
+  // Temperatura de ebulição da água na pressão de escape (aproximação)
+  const tempEbulicaoPrimeiroEfeito = 100 + 13.5 * Math.log(pressaoVapor + 1); // Aprox. para kgf/cm²
+
+  const calorEspecificoCaldo = 4.187 * (1 - (0.006 * brixCaldo)); // kJ/kg°C
+  const calorLatenteVapor = 2257; // kJ/kg (aproximado)
+  const vazaoMassaCaldo = (vazaoCaldo * densidadeCaldo) / 1000; // t/h
+  const tempEntrada = temperaturaCaldo && !isNaN(temperaturaCaldo) ? temperaturaCaldo : 105;
+
+  // 1. Cálculo do Vapor SOMENTE para Aquecimento
+  let vaporParaAquecimento = 0;
+  if (tempEntrada < tempEbulicaoPrimeiroEfeito) {
+      vaporParaAquecimento = (vazaoMassaCaldo * calorEspecificoCaldo * (tempEbulicaoPrimeiroEfeito - tempEntrada)) / calorLatenteVapor;
+  }
 
   const brixValues = [brixCaldo, brixEfeito1, brixEfeito2, brixEfeito3, brixEfeito4, brixEfeito5];
-  const vazaoMassaCaldo = vazaoCaldo * densidadeCaldo / 1000; // t/h
-
+  
   const vazoesSaida: number[] = [];
   const evaporationRatesTons: number[] = [];
   let vazaoEntradaAtual = vazaoMassaCaldo;
   
-  // Balanço de massa para calcular vazões e taxas em t/h
+  // 2. Balanço de massa para calcular taxas de evaporação em t/h
   for (let i = 0; i < 5; i++) {
     const brixIn = brixValues[i];
     const brixOut = brixValues[i+1];
@@ -45,6 +55,9 @@ export function performCalculations(data: EvaporationData): CalculatedData {
     
     vazaoEntradaAtual = vazaoSaida;
   }
+
+  // 3. Cálculo do Consumo Total de Vapor no Primeiro Efeito
+  const consumoVaporPrimeiroEfeito = vaporParaAquecimento + evaporationRatesTons[0];
 
   // Cálculo da taxa de evaporação em PERCENTAGEM, conforme solicitado
   const evaporationRatePercent: { name: string; rate: number }[] = [];
@@ -90,7 +103,7 @@ export function performCalculations(data: EvaporationData): CalculatedData {
   const caldoClarificado = {
     'Vazão (m³/h)': vazaoCaldo.toFixed(2),
     'Brix (%)': brixCaldo.toFixed(2),
-    'Temperatura (°C)': temperaturaCaldo ? temperaturaCaldo.toFixed(2) : 'N/A',
+    'Temperatura (°C)': tempEntrada.toFixed(2),
     'Densidade (kg/m³)': densidadeCaldo.toFixed(2),
     summary: 'Análise dos parâmetros de entrada do caldo clarificado.'
   };
@@ -111,7 +124,7 @@ export function performCalculations(data: EvaporationData): CalculatedData {
     effect5: { brix: brixEvolution[4].brix, eficiencia: effectEfficiency[4].efficiency, taxa_evaporacao: evaporationRatesTons[4], area: areaEfeito5, kg_vapor_m2: kgVaporPorM2[4].value },
   };
 
-  const overallSummary = `Processo de evaporação operando com vazão de ${vazaoCaldo} m³/h e brix inicial de ${brixCaldo}%. O consumo de vapor para elevar a temperatura do caldo à de ebulição é de ${consumoVaporTotal.toFixed(2)} t/h.`;
+  const overallSummary = `Processo com vazão de ${vazaoCaldo} m³/h e brix de ${brixCaldo}%. O consumo total de vapor no primeiro efeito é de ${consumoVaporPrimeiroEfeito.toFixed(2)} t/h, sendo ${vaporParaAquecimento.toFixed(2)} t/h para aquecimento do caldo e ${evaporationRatesTons[0].toFixed(2)} t/h para evaporação.`;
 
   const effectsSummary: EffectSummaryData[] = brixEvolution.map((effect, index) => {
     const brixIn = brixValues[index];
@@ -134,7 +147,7 @@ export function performCalculations(data: EvaporationData): CalculatedData {
 
   return {
     densidadeCaldo,
-    consumoVaporTotal,
+    consumoVaporTotal: consumoVaporPrimeiroEfeito, // Agora o nome antigo armazena o valor correto
     brixEvolution,
     effectEfficiency,
     evaporationRate: evaporationRatePercent, // Exportando a taxa em porcentagem para o gráfico
