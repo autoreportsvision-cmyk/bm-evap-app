@@ -72,3 +72,4 @@ export async function createCheckoutSession(
     throw new Error(`Falha ao criar sessão de checkout: ${errorMessage}`);
   }
 }
+
