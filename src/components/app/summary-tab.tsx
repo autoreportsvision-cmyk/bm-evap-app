@@ -41,9 +41,11 @@ export default function SummaryTab() {
                       <TableHead>Efeito</TableHead>
                       <TableHead className="text-right">Brix Entrada (%)</TableHead>
                       <TableHead className="text-right">Brix Saída (%)</TableHead>
+                      <TableHead className="text-right">Vazão Caldo (t/h)</TableHead>
                       <TableHead className="text-right">Vapor Gerado (t/h)</TableHead>
                       <TableHead className="text-right">Taxa Evaporação (%)</TableHead>
                       <TableHead className="text-right">Eficiência (%)</TableHead>
+                      <TableHead className="text-right">kg Vapor/m²</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -52,9 +54,11 @@ export default function SummaryTab() {
                         <TableCell className="font-medium">{effect.name}</TableCell>
                         <TableCell className="text-right">{effect.brixIn}</TableCell>
                         <TableCell className="text-right">{effect.brixOut}</TableCell>
+                        <TableCell className="text-right">{effect.vazaoCaldo}</TableCell>
                         <TableCell className="text-right">{effect.vaporGerado}</TableCell>
                         <TableCell className="text-right">{effect.taxaEvaporacao}</TableCell>
                         <TableCell className="text-right">{effect.eficiencia}</TableCell>
+                        <TableCell className="text-right">{effect.kgVaporM2}</TableCell>
                     </TableRow>
                 ))}
                 </TableBody>

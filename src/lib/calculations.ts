@@ -42,7 +42,7 @@ export function performCalculations(data: EvaporationData): CalculatedData {
   const evaporationRatesTons: number[] = [];
   let vazaoEntradaAtual = vazaoMassaCaldo;
   
-  // 2. Balanço de massa para calcular taxas de evaporação em t/h
+  // 2. Balanço de massa para calcular taxas de evaporação em t/h e vazões
   for (let i = 0; i < 5; i++) {
     const brixIn = brixValues[i];
     const brixOut = brixValues[i+1];
@@ -137,10 +137,11 @@ export function performCalculations(data: EvaporationData): CalculatedData {
         name: `Efeito ${index + 1}`,
         brixIn: parseFloat(brixIn.toFixed(2)),
         brixOut: parseFloat(brixOut.toFixed(2)),
-        vazaoCaldo: parseFloat(vazaoCaldo.toFixed(2)), // This should be calculated per effect
+        vazaoCaldo: parseFloat(vazoesSaida[index].toFixed(2)),
         vaporGerado: parseFloat(vaporGeneration[index].generation.toFixed(2)),
         taxaEvaporacao: parseFloat(taxaEvaporacaoPercent.toFixed(2)), // Usa o valor em porcentagem
         eficiencia: parseFloat(effectEfficiency[index].efficiency.toFixed(2)),
+        kgVaporM2: parseFloat(kgVaporPorM2[index].value.toFixed(2)),
     }
   });
 

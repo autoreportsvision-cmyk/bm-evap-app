@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 const numberFromString = z.string().transform((val, ctx) => {
@@ -56,6 +57,7 @@ export type EffectSummaryData = {
   vaporGerado: number;
   taxaEvaporacao: number; // This is in % for the summary table
   eficiencia: number;
+  kgVaporM2: number;
 };
 
 
