@@ -56,6 +56,7 @@ export default function EvaluationsTab() {
     }
 
     setLoading(true);
+    setAiEvaluations(null);
 
     const result = await getAiEvaluations({
       effects: calculatedData.effects,
@@ -126,7 +127,7 @@ export default function EvaluationsTab() {
              </div>
           ) : generalEvaluation ? (
              <div
-                className="whitespace-pre-wrap rounded-md border bg-background p-4 overflow-auto text-base"
+                className="whitespace-pre-wrap rounded-md border bg-background p-4 overflow-auto text-sm"
                 dangerouslySetInnerHTML={{ __html: generalEvaluation.replace(/\n/g, '<br />') }}
               >
               </div>
