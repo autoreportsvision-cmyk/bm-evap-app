@@ -8,6 +8,7 @@ import Script from 'next/script';
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import StripeBuyButton from '@/components/app/stripe-buy-button';
+import WhatsAppIcon from '@/components/icons/whatsapp-icon';
 
 
 export default function PricingPage() {
@@ -115,6 +116,16 @@ export default function PricingPage() {
                                 )}
                             </CardFooter>
                         </Card>
+                    </div>
+
+                    <div className="mt-12 text-center">
+                        <p className="text-muted-foreground">Problemas com o pagamento? Entre em contato conosco.</p>
+                        <a href="https://wa.me/5516996344253" target="_blank" rel="noopener noreferrer">
+                            <Button variant="outline" className="mt-2">
+                                <WhatsAppIcon className="h-5 w-5" />
+                                Reportar Erro no WhatsApp
+                            </Button>
+                        </a>
                     </div>
                 </div>
             </div>
