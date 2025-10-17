@@ -32,38 +32,42 @@ export async function getChatResponse(input: ChatInput): Promise<{ success: bool
 export async function createStripeRedirect(plan: 'monthly' | 'yearly'): Promise<void> {
   const sessionCookie = headers().get('cookie')?.split('; ').find(c => c.startsWith('__session='));
   if (!sessionCookie) {
-    return redirect('/login?redirect=/pricing');
+    redirect('/login?redirect=/pricing');
   }
+
   const session = sessionCookie.split('=')[1];
-  
   const authAdmin = getAuthAdmin();
   let decodedToken;
+
   try {
-      decodedToken = await authAdmin.verifySessionCookie(session, true);
+    decodedToken = await authAdmin.verifySessionCookie(session, true);
   } catch (error) {
-      console.error("Error verifying session cookie:", error);
-      return redirect('/login?redirect=/pricing');
+    console.error("Error verifying session cookie, redirecting to login:", error);
+    // If verification fails, redirect to login. The redirect call is outside the catch block.
+    redirect('/login?redirect=/pricing');
   }
 
   const userId = decodedToken.uid;
   if (!userId) {
-      console.error("Could not get user from session.");
-      return redirect('/login?redirect=/pricing');
+    console.error("Could not get user from session.");
+    // This case should ideally not be reached if verifySessionCookie succeeds.
+    redirect('/login?redirect=/pricing');
   }
 
-  // Usar STRIPE_... em vez de NEXT_PUBLIC_... porque isso agora é executado apenas no servidor.
+  // Use STRIPE_... instead of NEXT_PUBLIC_... because this now only runs on the server.
   const monthlyLink = process.env.STRIPE_MONTHLY_PAYMENT_LINK;
   const yearlyLink = process.env.STRIPE_YEARLY_PAYMENT_LINK;
 
   const paymentLink = plan === 'monthly' ? monthlyLink : yearlyLink;
 
   if (!paymentLink) {
+    // This will cause an error page to be shown, which is appropriate.
     throw new Error(`Stripe payment link for "${plan}" plan is not configured in environment variables.`);
   }
 
   const urlWithUser = new URL(paymentLink);
   urlWithUser.searchParams.append('client_reference_id', userId);
 
-  // A chamada de redirecionamento deve ocorrer fora de um bloco try/catch.
+  // The redirect call must happen outside of a try/catch block.
   redirect(urlWithUser.toString());
 }
