@@ -35,10 +35,13 @@ export async function createCheckoutSession(
   uid: string
 ): Promise<{ success: boolean; sessionId?: string; error?: string }> {
   try {
-    if (!process.env.STRIPE_API_KEY) {
+    const stripeApiKey = process.env.STRIPE_API_KEY;
+    const stripePriceId = process.env.STRIPE_PRICE_ID;
+
+    if (!stripeApiKey) {
       throw new Error('A chave da API Stripe (STRIPE_API_KEY) não está configurada nas variáveis de ambiente.');
     }
-    if (!process.env.STRIPE_PRICE_ID) {
+    if (!stripePriceId) {
       throw new Error('O ID do preço do Stripe (STRIPE_PRICE_ID) não está configurado nas variáveis de ambiente.');
     }
     
@@ -49,7 +52,7 @@ export async function createCheckoutSession(
       payment_method_types: ['card'],
       line_items: [
         {
-          price: process.env.STRIPE_PRICE_ID,
+          price: stripePriceId, // Use the validated variable here
           quantity: 1,
         },
       ],
