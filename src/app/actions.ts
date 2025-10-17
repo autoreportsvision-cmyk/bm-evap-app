@@ -8,8 +8,6 @@ import type { ChatInput } from '@/ai/flows/chat-flow';
 import { stripe } from '@/lib/stripe';
 import Stripe from 'stripe';
 
-// O Next.js carrega automaticamente as variáveis do .env no servidor,
-// então a importação explícita do 'dotenv' não é necessária e pode causar conflitos.
 
 export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
   try {
@@ -36,10 +34,8 @@ export async function createStripeCheckoutSession(plan: 'monthly' | 'yearly', us
     return { success: false, error: 'auth/no-user-id' };
   }
   
-  // A verificação agora é feita diretamente no 'process.env' que o Next.js popula.
-  if (!process.env.STRIPE_API_KEY) {
-     return { success: false, error: 'A chave da API do Stripe não está configurada no servidor.' };
-  }
+  // A verificação agora está na inicialização em src/lib/stripe.ts.
+  // Se chegarmos aqui, a chave da API existe.
 
   const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
   const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
@@ -63,10 +59,10 @@ export async function createStripeCheckoutSession(plan: 'monthly' | 'yearly', us
           quantity: 1,
         },
       ],
-      mode: 'payment',
+      mode: 'subscription', // Alterado para 'subscription' para planos recorrentes
       metadata: {
         userId: userId,
-        plan: plan
+        plan: plan,
       },
       success_url: `${app_url}/?payment_success=true`,
       cancel_url: `${app_url}/pricing?payment_canceled=true`,
