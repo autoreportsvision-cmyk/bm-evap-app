@@ -20,30 +20,36 @@ export default function PricingPage() {
     const handleSubscribe = async (plan: 'monthly' | 'yearly') => {
         setIsRedirecting(plan);
 
-        if (!user) {
-            if (isUserLoading) {
-                // Aguarda um momento se o usuário ainda estiver carregando
-                setTimeout(() => handleSubscribe(plan), 100);
-            } else {
-                // Se não estiver carregando e não houver usuário, redireciona para o login
-                toast({
-                    title: 'Autenticação Necessária',
-                    description: 'Você precisa fazer login para comprar um plano.',
-                });
-                router.push('/login?redirect=/pricing');
-            }
+        if (isUserLoading) {
+            // Se ainda está carregando, espera um pouco e tenta de novo.
+            // Isso evita uma condição de corrida onde o usuário existe, mas ainda não foi carregado.
+            setTimeout(() => handleSubscribe(plan), 200);
             return;
         }
 
+        if (!user) {
+            // Se não está carregando e não há usuário, redireciona para o login.
+            toast({
+                title: 'Autenticação Necessária',
+                description: 'Você precisa fazer login para comprar um plano.',
+                variant: 'destructive',
+            });
+            router.push('/login?redirect=/pricing');
+            setIsRedirecting(null);
+            return;
+        }
+
+        // Se chegamos aqui, temos um usuário.
         const result = await createStripeRedirect(plan, user.uid);
 
         if (result.success && result.url) {
             window.location.href = result.url;
         } else {
+            // Exibe o erro retornado pela server action.
             toast({
                 variant: 'destructive',
                 title: 'Erro no Pagamento',
-                description: result.error || 'Não foi possível redirecionar para o pagamento. Verifique a configuração.',
+                description: result.error || 'Não foi possível redirecionar para o pagamento. Verifique a configuração do servidor.',
             });
             setIsRedirecting(null);
         }
