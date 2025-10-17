@@ -22,7 +22,7 @@ export default function PricingPage() {
             toast({
                 variant: 'destructive',
                 title: 'Erro de Configuração',
-                description: 'A chave publicável do Stripe não está configurada. Verifique as variáveis de ambiente.',
+                description: 'A chave publicável do Stripe (NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) não está configurada. Verifique as variáveis de ambiente.',
             });
             return;
         }
