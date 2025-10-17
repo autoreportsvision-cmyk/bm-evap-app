@@ -34,23 +34,22 @@ export async function createCheckoutSession(
   uid: string,
   priceId: string,
   plan: 'monthly' | 'yearly'
-): Promise<{ success: boolean; error?: string }> {
-  try {
-    const stripeApiKey = process.env.STRIPE_API_KEY;
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+) {
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
-    if (!stripeApiKey) {
-      throw new Error('A chave da API Stripe (STRIPE_API_KEY) não está configurada nas variáveis de ambiente.');
-    }
-    if (!priceId) {
-      throw new Error('O ID do preço do Stripe não foi fornecido.');
-    }
-    if (!appUrl) {
-        throw new Error('A URL da aplicação (NEXT_PUBLIC_APP_URL) não está configurada nas variáveis de ambiente.');
-    }
-    
-    // O modo deve ser 'payment' para pagamentos únicos, que é o que estamos fazendo.
-    const session = await stripe.checkout.sessions.create({
+  if (!process.env.STRIPE_API_KEY) {
+    throw new Error('A chave da API Stripe (STRIPE_API_KEY) não está configurada nas variáveis de ambiente.');
+  }
+  if (!priceId) {
+    throw new Error('O ID do preço do Stripe não foi fornecido.');
+  }
+  if (!appUrl) {
+    throw new Error('A URL da aplicação (NEXT_PUBLIC_APP_URL) não está configurada nas variáveis de ambiente.');
+  }
+
+  let session;
+  try {
+    session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
@@ -63,21 +62,21 @@ export async function createCheckoutSession(
       cancel_url: `${appUrl}/pricing`,
       metadata: {
         userId: uid,
-        plan: plan, // Passa o plano para o webhook para definir a data de expiração correta.
+        plan: plan,
       },
     });
-
-    if (!session.url) {
-        throw new Error('Could not create Stripe checkout session or URL is missing.');
-    }
-
-    // Redireciona o usuário para a URL de checkout do Stripe do lado do servidor.
-    redirect(session.url);
-
   } catch (error) {
     console.error('Error in createCheckoutSession:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-    // A função não retornará em caso de redirecionamento, mas em caso de erro, retornamos uma mensagem.
-    return { success: false, error: `Falha ao criar sessão de checkout: ${errorMessage}` };
+    // Retornamos um objeto de erro para o cliente poder mostrar uma mensagem.
+    // O throw aqui não vai acontecer por causa do redirect, mas é uma boa prática.
+    throw new Error(`Falha ao criar sessão de checkout: ${errorMessage}`);
+  }
+
+  if (session?.url) {
+    redirect(session.url);
+  } else {
+    // Se a sessão ou a URL não forem criadas, lançamos um erro.
+    throw new Error('Could not create Stripe checkout session or URL is missing.');
   }
 }

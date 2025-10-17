@@ -32,8 +32,8 @@ export default function PricingPage() {
             return;
         }
 
-        const priceId = plan === 'monthly' 
-            ? process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID 
+        const priceId = plan === 'monthly'
+            ? process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID
             : process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID;
 
         if (!priceId) {
@@ -48,25 +48,16 @@ export default function PricingPage() {
         setLoadingPlan(plan);
         
         try {
-            // A ação agora lida com o redirecionamento.
-            // Se houver um erro, ela o lançará ou retornará um objeto de erro.
-            const result = await createCheckoutSession(user.uid, priceId, plan);
-            
-            // Se a função retornar, significa que houve um erro antes do redirecionamento.
-            if (!result.success) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Erro ao Iniciar Checkout',
-                    description: result.error,
-                });
-                setLoadingPlan(null);
-            }
+            // A ação agora lida com o redirecionamento diretamente.
+            // Se houver um erro, ela o lançará, e o catch aqui vai lidar com ele.
+            await createCheckoutSession(user.uid, priceId, plan);
+            // Se a linha acima for bem-sucedida, o navegador será redirecionado e este código não será executado.
         } catch (error) {
             console.error('Failed to create checkout session:', error);
             toast({
                 variant: 'destructive',
-                title: 'Erro Inesperado',
-                description: 'Ocorreu um erro ao tentar redirecionar para o pagamento. Tente novamente.',
+                title: 'Erro ao Iniciar Checkout',
+                description: error instanceof Error ? error.message : 'Ocorreu um erro ao tentar redirecionar para o pagamento. Tente novamente.',
             });
             setLoadingPlan(null);
         }
