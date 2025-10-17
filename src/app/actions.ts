@@ -50,9 +50,7 @@ export async function createCheckoutSession(
         throw new Error('A URL da aplicação (NEXT_PUBLIC_APP_URL) não está configurada nas variáveis de ambiente.');
     }
     
-    // Assinaturas usam o modo 'subscription', pagamentos únicos usam 'payment'
-    const mode = (plan === 'monthly' || plan === 'yearly') ? 'subscription' : 'payment';
-
+    // Para pagamentos únicos, o modo correto é 'payment'.
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -61,12 +59,12 @@ export async function createCheckoutSession(
           quantity: 1,
         },
       ],
-      mode: mode,
+      mode: 'payment', // Corrigido para sempre usar 'payment' para pagamentos únicos.
       success_url: `${appUrl}/`,
       cancel_url: `${appUrl}/pricing`,
       metadata: {
         userId: uid,
-        plan: plan, // Pass the plan to the webhook
+        plan: plan, // Passa o plano para o webhook para definir a data de expiração correta.
       },
     });
 
