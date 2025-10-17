@@ -31,6 +31,8 @@ export default function PricingPage() {
                 // It will throw an error if something goes wrong on the server,
                 // which we can catch here.
                 await createStripeRedirect(plan);
+                // The line above will redirect and this component will unmount,
+                // so we don't need to worry about resetting the loading state.
             } catch (error: any) {
                 console.error("Stripe Redirect Error:", error);
                 toast({
@@ -41,8 +43,8 @@ export default function PricingPage() {
                 setIsRedirecting(null);
             }
         }
-        // No need for an else, the function will just wait for the user to be loaded
-        // and the user can click again.
+        // No need for an else, if the user is not loaded yet,
+        // the button is disabled and the user can click again once it is.
     };
 
     const features = [
