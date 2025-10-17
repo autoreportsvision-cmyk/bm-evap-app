@@ -1,41 +1,42 @@
 
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Gem, Star } from 'lucide-react';
+import { Check, Gem, Star, Loader } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function PricingPage() {
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
     const router = useRouter();
+    const [isRedirecting, setIsRedirecting] = useState<string | null>(null);
 
     // These environment variables should hold the full URL of your Stripe Payment Links
     const monthlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK;
     const yearlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK;
 
-    const handleRedirect = (paymentLink: string | undefined) => {
-        if (!user) {
-            // If the user is not logged in, redirect them to the login page.
-            // After login, they should be ideally redirected back here.
+    const handleRedirect = (plan: 'monthly' | 'yearly') => {
+        setIsRedirecting(plan);
+        if (!user && !isUserLoading) {
             router.push('/login?redirect=/pricing');
             return;
         }
-        if (paymentLink) {
-            // Append the user's UID to the Stripe Payment Link URL.
-            // This is crucial for the webhook to identify which user to grant access to.
+
+        const paymentLink = plan === 'monthly' ? monthlyPaymentLink : yearlyPaymentLink;
+
+        if (user && paymentLink) {
             const urlWithUser = new URL(paymentLink);
             urlWithUser.searchParams.append('client_reference_id', user.uid);
-            
-            // Redirect the user directly to the Stripe checkout page.
             window.location.href = urlWithUser.toString();
-        } else {
-            // This error is a safeguard for the developer.
-            console.error("Stripe Payment Link is not configured in .env.local file.");
-            alert("A funcionalidade de pagamento não está configurada corretamente. Verifique as variáveis de ambiente.");
+        } else if (!paymentLink) {
+            console.error(`Stripe Payment Link for ${plan} plan is not configured in environment variables.`);
+            alert("A funcionalidade de pagamento não está configurada corretamente.");
+            setIsRedirecting(null);
         }
+        // If user is loading, the effect below will handle the redirect once the user is available.
     };
 
     const features = [
@@ -45,6 +46,8 @@ export default function PricingPage() {
         "Chat interativo com IA sobre os dados.",
         "Suporte prioritário."
     ];
+    
+    const isLoading = isUserLoading || !!isRedirecting;
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
@@ -83,9 +86,9 @@ export default function PricingPage() {
                         <CardFooter>
                             <Button 
                                 className="w-full" 
-                                onClick={() => handleRedirect(monthlyPaymentLink)} 
-                                disabled={!monthlyPaymentLink}>
-                                Comprar Acesso Mensal
+                                onClick={() => handleRedirect('monthly')} 
+                                disabled={isLoading || !monthlyPaymentLink}>
+                                {isRedirecting === 'monthly' ? <Loader className="animate-spin" /> : 'Comprar Acesso Mensal'}
                             </Button>
                         </CardFooter>
                     </Card>
@@ -114,9 +117,9 @@ export default function PricingPage() {
                         <CardFooter>
                             <Button 
                                 className="w-full" 
-                                onClick={() => handleRedirect(yearlyPaymentLink)} 
-                                disabled={!yearlyPaymentLink}>
-                                Comprar Acesso Anual
+                                onClick={() => handleRedirect('yearly')} 
+                                disabled={isLoading || !yearlyPaymentLink}>
+                                 {isRedirecting === 'yearly' ? <Loader className="animate-spin" /> : 'Comprar Acesso Anual'}
                             </Button>
                         </CardFooter>
                     </Card>
