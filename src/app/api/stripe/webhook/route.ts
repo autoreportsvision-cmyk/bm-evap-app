@@ -3,14 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { stripe } from '@/lib/stripe';
 import { headers } from 'next/headers';
-import { firestoreAdmin } from '@/firebase/admin';
+import { getFirestoreAdmin } from '@/firebase/admin';
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
-    // client_reference_id is passed from the payment link
+    // client_reference_id é passado do link de pagamento
     const userId = session.client_reference_id;
-    // The payment_link object contains the metadata we can use
+    // O objeto payment_link contém os metadados que podemos usar
     const paymentLink = await stripe.paymentLinks.retrieve(session.payment_link!);
     const plan = paymentLink.metadata?.plan as 'monthly' | 'yearly' | undefined;
 
@@ -18,7 +18,8 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
         console.error('Webhook Error: checkout.session.completed não continha client_reference_id ou o link de pagamento não tinha o plano nos metadados.');
         return { success: false, error: 'Metadados ausentes na sessão de checkout.' };
     }
-
+    
+    const firestoreAdmin = getFirestoreAdmin();
     try {
         const userRef = firestoreAdmin.collection('users').doc(userId);
         

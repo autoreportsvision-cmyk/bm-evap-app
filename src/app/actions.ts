@@ -6,7 +6,7 @@ import type { GenerateEffectEvaluationsInput, GenerateEffectEvaluationsOutput } 
 import { chat } from '@/ai/flows/chat-flow';
 import type { ChatInput } from '@/ai/flows/chat-flow';
 import { redirect } from 'next/navigation';
-import { authAdmin } from '@/firebase/admin';
+import { getAuthAdmin } from '@/firebase/admin';
 import { headers } from 'next/headers';
 
 export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
@@ -35,7 +35,8 @@ export async function createStripeRedirect(plan: 'monthly' | 'yearly'): Promise<
     return redirect('/login?redirect=/pricing');
   }
   const session = sessionCookie.split('=')[1];
-
+  
+  const authAdmin = getAuthAdmin();
   let decodedToken;
   try {
       decodedToken = await authAdmin.verifySessionCookie(session, true);
@@ -47,24 +48,22 @@ export async function createStripeRedirect(plan: 'monthly' | 'yearly'): Promise<
   const userId = decodedToken.uid;
   if (!userId) {
       console.error("Could not get user from session.");
-      // Redirecting to login is safer here as well.
       return redirect('/login?redirect=/pricing');
   }
 
-  // Use STRIPE_... instead of NEXT_PUBLIC_... because this now runs only on the server.
+  // Usar STRIPE_... em vez de NEXT_PUBLIC_... porque isso agora é executado apenas no servidor.
   const monthlyLink = process.env.STRIPE_MONTHLY_PAYMENT_LINK;
   const yearlyLink = process.env.STRIPE_YEARLY_PAYMENT_LINK;
 
   const paymentLink = plan === 'monthly' ? monthlyLink : yearlyLink;
 
   if (!paymentLink) {
-    // This will be caught by the global error handler if it happens.
     throw new Error(`Stripe payment link for "${plan}" plan is not configured in environment variables.`);
   }
 
   const urlWithUser = new URL(paymentLink);
   urlWithUser.searchParams.append('client_reference_id', userId);
 
-  // The redirect call must happen outside of a try/catch block.
+  // A chamada de redirecionamento deve ocorrer fora de um bloco try/catch.
   redirect(urlWithUser.toString());
 }

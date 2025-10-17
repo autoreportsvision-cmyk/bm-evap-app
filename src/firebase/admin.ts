@@ -1,20 +1,26 @@
 
 import * as admin from 'firebase-admin';
+import type { Auth } from 'firebase-admin/auth';
+import type { Firestore } from 'firebase-admin/firestore';
 
-// Make sure to initialize the app only once
-if (!admin.apps.length) {
-  try {
-    // When running in a Google Cloud environment (like Firebase App Hosting),
-    // the SDK automatically uses the GOOGLE_APPLICATION_CREDENTIALS.
-    // Locally, this env var needs to be set to your service account key file.
-    admin.initializeApp();
-  } catch (error: any) {
-    console.error('Firebase Admin initialization error:', error.message);
-    // This log helps diagnose setup issues in different environments.
+const initializeAdminApp = (): admin.app.App => {
+  if (admin.apps.length > 0) {
+    return admin.apps[0]!;
   }
+  
+  // Quando executando em um ambiente Google Cloud (como o Firebase App Hosting),
+  // o SDK usa automaticamente as GOOGLE_APPLICATION_CREDENTIALS.
+  // Localmente, essa variável de ambiente precisa ser definida para o seu arquivo de chave de serviço.
+  return admin.initializeApp();
 }
 
-// It's safer to export functions that return the services
-// to ensure they are accessed after initialization.
-export const authAdmin = admin.auth();
-export const firestoreAdmin = admin.firestore();
+// Funções getter para garantir que a inicialização ocorra antes do acesso.
+export const getAuthAdmin = (): Auth => {
+  initializeAdminApp();
+  return admin.auth();
+};
+
+export const getFirestoreAdmin = (): Firestore => {
+  initializeAdminApp();
+  return admin.firestore();
+};
