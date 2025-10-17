@@ -11,7 +11,7 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
     const clientReferenceId = session.client_reference_id;
 
     if (!clientReferenceId) {
-        console.error(`Webhook Error: checkout.session.completed não continha o client_reference_id (User ID). Session ID: ${session.id}`);
+        console.error(`[WEBHOOK_ERROR] checkout.session.completed não continha o client_reference_id (User ID). Session ID: ${session.id}`);
         return { success: false, error: 'User ID não encontrado na sessão de checkout.' };
     }
 
@@ -21,22 +21,24 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
         const userDoc = await userRef.get();
 
         if (!userDoc.exists) {
-            console.error(`Webhook Error: Nenhum usuário encontrado com o ID: ${clientReferenceId}`);
+            console.error(`[WEBHOOK_ERROR] Nenhum usuário encontrado com o ID: ${clientReferenceId}`);
             return { success: false, error: `Usuário não encontrado.` };
         }
 
-        // Os line_items estarão disponíveis aqui porque expandimos a sessão antes de chamar esta função.
         const lineItems = session.line_items;
         
         if (!lineItems || lineItems.data.length === 0 || !lineItems.data[0].price) {
-            console.error(`Webhook Error: Não foi possível encontrar o price_id nos line_items da sessão: ${session.id}. Dados da sessão:`, JSON.stringify(session, null, 2));
+            console.error(`[WEBHOOK_ERROR] Não foi possível encontrar o price_id nos line_items da sessão: ${session.id}. Dados da sessão:`, JSON.stringify(session, null, 2));
             return { success: false, error: 'Não foi possível identificar o item comprado.' };
         }
         
         const priceId = lineItems.data[0].price.id;
+        console.log(`[WEBHOOK_INFO] Price ID recebido do Stripe: ${priceId}`);
+
 
         const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
         const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
+        console.log(`[WEBHOOK_INFO] Price IDs do .env: Mensal=${monthlyPriceId}, Anual=${yearlyPriceId}`);
         
         let plan: 'monthly' | 'yearly' | null = null;
         if (priceId === monthlyPriceId) {
@@ -46,7 +48,7 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
         }
         
         if (!plan) {
-            console.error(`Webhook Error: O price_id "${priceId}" não corresponde a nenhum plano configurado (mensal ou anual). Verifique os IDs no .env.`);
+            console.error(`[WEBHOOK_ERROR] O price_id "${priceId}" não corresponde a nenhum plano configurado (mensal ou anual). Verifique os IDs no .env e no Stripe.`);
             return { success: false, error: 'O plano comprado não foi reconhecido.' };
         }
 
@@ -64,10 +66,10 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
             accessExpiration: expirationDate,
         });
 
-        console.log(`ACESSO CONCEDIDO: Usuário ${clientReferenceId} agora é premium com o plano ${plan}. Expira em ${expirationDate.toISOString()}`);
+        console.log(`[WEBHOOK_SUCCESS] ACESSO CONCEDIDO: Usuário ${clientReferenceId} agora é premium com o plano ${plan}. Expira em ${expirationDate.toISOString()}`);
         return { success: true };
     } catch (error) {
-        console.error(`Erro GERAL ao processar o webhook para o usuário ${clientReferenceId}:`, error);
+        console.error(`[WEBHOOK_ERROR] Erro GERAL ao processar o webhook para o usuário ${clientReferenceId}:`, error);
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido.';
         return { success: false, error: `Falha ao processar o webhook: ${errorMessage}` };
     }
@@ -82,37 +84,33 @@ export async function POST(req: NextRequest) {
     const body = await req.text();
     event = stripe.webhooks.constructEvent(body, sig, endpointSecret);
   } catch (err: any) {
-    console.error(`Webhook Signature Error: ${err.message}`);
+    console.error(`[WEBHOOK_ERROR] Falha na verificação da assinatura do Webhook: ${err.message}`);
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
   }
 
   // Lidar apenas com o evento que confirma a conclusão de um pagamento.
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session;
-      
-      // Verificamos se o pagamento foi bem-sucedido
-      if (session.payment_status === 'paid') {
-        // Expande a sessão para GARANTIR que tenhamos o priceId dentro dos line_items.
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object as Stripe.Checkout.Session;
+    
+    if (session.payment_status === 'paid') {
+      try {
         const sessionWithLineItems = await stripe.checkout.sessions.retrieve(
             session.id,
-            { expand: ['line_items'] }
+            { expand: ['line_items.data.price.product'] } // Expande tudo que precisamos
         );
 
-        // **A CORREÇÃO ESTÁ AQUI:** Passamos a sessão expandida para a função.
         const result = await grantAccessAfterCheckout(sessionWithLineItems);
 
         if (!result.success) {
-            // Retorna um erro 500 se a concessão de acesso falhar
             return NextResponse.json({ error: result.error }, { status: 500 });
         }
-      } else {
-        console.log(`Sessão ${session.id} completada, mas pagamento não está 'paid' (status: ${session.payment_status})`);
+      } catch (error) {
+        console.error(`[WEBHOOK_ERROR] Falha ao buscar sessão expandida ou ao processar o acesso: `, error);
+        return NextResponse.json({ error: 'Falha interna ao processar o pagamento.' }, { status: 500 });
       }
-      break;
+    } else {
+      console.log(`[WEBHOOK_INFO] Sessão ${session.id} completada, mas pagamento não está 'paid' (status: ${session.payment_status})`);
     }
-    default:
-      // console.log(`Evento de webhook não manipulado: ${event.type}`);
   }
 
   return NextResponse.json({ received: true });
