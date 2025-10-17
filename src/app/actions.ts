@@ -37,6 +37,7 @@ export async function createCheckoutSession(
   try {
     const stripeApiKey = process.env.STRIPE_API_KEY;
     const stripePriceId = process.env.STRIPE_PRICE_ID;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
     if (!stripeApiKey) {
       throw new Error('A chave da API Stripe (STRIPE_API_KEY) não está configurada nas variáveis de ambiente.');
@@ -44,10 +45,10 @@ export async function createCheckoutSession(
     if (!stripePriceId) {
       throw new Error('O ID do preço do Stripe (STRIPE_PRICE_ID) não está configurado nas variáveis de ambiente.');
     }
+    if (!appUrl) {
+        throw new Error('A URL da aplicação (NEXT_PUBLIC_APP_URL) não está configurada nas variáveis de ambiente.');
+    }
     
-    const headersList = headers();
-    const origin = headersList.get('origin');
-
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -57,8 +58,8 @@ export async function createCheckoutSession(
         },
       ],
       mode: 'payment',
-      success_url: `${origin}/`,
-      cancel_url: `${origin}/pricing`,
+      success_url: `${appUrl}/`,
+      cancel_url: `${appUrl}/pricing`,
       metadata: {
         userId: uid,
       },
