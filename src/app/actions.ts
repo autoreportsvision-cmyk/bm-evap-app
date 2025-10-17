@@ -34,7 +34,7 @@ export async function createCheckoutSession(
   uid: string,
   priceId: string,
   plan: 'monthly' | 'yearly'
-): Promise<{ success: boolean; sessionId?: string; error?: string }> {
+): Promise<{ success: boolean; error?: string }> {
   try {
     const stripeApiKey = process.env.STRIPE_API_KEY;
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -67,14 +67,17 @@ export async function createCheckoutSession(
       },
     });
 
-    if (!session.id) {
-        throw new Error('Could not create Stripe checkout session');
+    if (!session.url) {
+        throw new Error('Could not create Stripe checkout session or URL is missing.');
     }
 
-    return { success: true, sessionId: session.id };
+    // Redireciona o usuário para a URL de checkout do Stripe do lado do servidor.
+    redirect(session.url);
+
   } catch (error) {
     console.error('Error in createCheckoutSession:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    // A função não retornará em caso de redirecionamento, mas em caso de erro, retornamos uma mensagem.
     return { success: false, error: `Falha ao criar sessão de checkout: ${errorMessage}` };
   }
 }

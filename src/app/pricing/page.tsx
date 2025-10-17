@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -7,7 +8,6 @@ import { Check, Gem, Loader, Star } from 'lucide-react';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { getStripe } from '@/lib/stripe-client';
 import { createCheckoutSession } from '../actions';
 import Link from 'next/link';
 
@@ -47,34 +47,29 @@ export default function PricingPage() {
 
         setLoadingPlan(plan);
         
-        const { success, sessionId, error } = await createCheckoutSession(user.uid, priceId, plan);
-
-        if (success && sessionId) {
-            const stripe = await getStripe();
-            if (stripe) {
-                const { error: stripeError } = await stripe.redirectToCheckout({ sessionId });
-                if (stripeError) {
-                    toast({
-                        variant: 'destructive',
-                        title: 'Erro de Redirecionamento',
-                        description: stripeError.message,
-                    });
-                }
-            } else {
+        try {
+            // A ação agora lida com o redirecionamento.
+            // Se houver um erro, ela o lançará ou retornará um objeto de erro.
+            const result = await createCheckoutSession(user.uid, priceId, plan);
+            
+            // Se a função retornar, significa que houve um erro antes do redirecionamento.
+            if (!result.success) {
                 toast({
                     variant: 'destructive',
-                    title: 'Erro de Configuração',
-                    description: 'Não foi possível carregar o Stripe. Tente novamente.',
+                    title: 'Erro ao Iniciar Checkout',
+                    description: result.error,
                 });
+                setLoadingPlan(null);
             }
-        } else {
-             toast({
+        } catch (error) {
+            console.error('Failed to create checkout session:', error);
+            toast({
                 variant: 'destructive',
-                title: 'Erro ao Assinar',
-                description: error,
+                title: 'Erro Inesperado',
+                description: 'Ocorreu um erro ao tentar redirecionar para o pagamento. Tente novamente.',
             });
+            setLoadingPlan(null);
         }
-        setLoadingPlan(null);
     };
 
   const features = [
