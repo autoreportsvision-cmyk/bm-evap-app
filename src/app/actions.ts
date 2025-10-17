@@ -32,13 +32,16 @@ export async function createStripeRedirect(plan: 'monthly' | 'yearly', userId: s
   }
   
   try {
-    // On the server, we use env vars without NEXT_PUBLIC_
+    // No servidor, usamos as variáveis de ambiente sem NEXT_PUBLIC_
     const monthlyLink = process.env.STRIPE_MONTHLY_PAYMENT_LINK;
     const yearlyLink = process.env.STRIPE_YEARLY_PAYMENT_LINK;
     const paymentLink = plan === 'monthly' ? monthlyLink : yearlyLink;
 
     if (!paymentLink) {
-      throw new Error(`Stripe payment link for "${plan}" plan is not configured.`);
+      // Retorna um erro estruturado em vez de lançar uma exceção
+      const errorMessage = `Stripe payment link for "${plan}" plan is not configured.`;
+      console.error(errorMessage);
+      return { success: false, error: errorMessage };
     }
 
     const urlWithUser = new URL(paymentLink);
@@ -51,4 +54,3 @@ export async function createStripeRedirect(plan: 'monthly' | 'yearly', userId: s
     return { success: false, error: error.message || 'Falha ao criar o redirecionamento para o pagamento.' };
   }
 }
-
