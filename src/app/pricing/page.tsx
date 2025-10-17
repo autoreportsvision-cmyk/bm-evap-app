@@ -20,30 +20,31 @@ export default function PricingPage() {
     const handleSubscribe = async (plan: 'monthly' | 'yearly') => {
         setIsRedirecting(plan);
 
-        if (!user && !isUserLoading) {
-            router.push('/login?redirect=/pricing');
+        if (!user) {
+            if (isUserLoading) {
+                // Aguarda um momento se o usuário ainda estiver carregando
+                setTimeout(() => handleSubscribe(plan), 100);
+            } else {
+                // Se não estiver carregando e não houver usuário, redireciona para o login
+                toast({
+                    title: 'Autenticação Necessária',
+                    description: 'Você precisa fazer login para comprar um plano.',
+                });
+                router.push('/login?redirect=/pricing');
+            }
             return;
         }
 
-        const result = await createStripeRedirect(plan);
+        const result = await createStripeRedirect(plan, user.uid);
 
         if (result.success && result.url) {
             window.location.href = result.url;
         } else {
-            if (result.error?.includes('auth')) {
-                toast({
-                    variant: 'destructive',
-                    title: 'Sessão Expirada',
-                    description: 'Sua sessão expirou. Por favor, faça login novamente.',
-                });
-                router.push('/login?redirect=/pricing');
-            } else {
-                 toast({
-                    variant: 'destructive',
-                    title: 'Erro no Pagamento',
-                    description: result.error || 'Não foi possível redirecionar para o pagamento. Verifique a configuração.',
-                });
-            }
+            toast({
+                variant: 'destructive',
+                title: 'Erro no Pagamento',
+                description: result.error || 'Não foi possível redirecionar para o pagamento. Verifique a configuração.',
+            });
             setIsRedirecting(null);
         }
     };

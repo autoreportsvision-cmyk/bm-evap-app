@@ -5,9 +5,6 @@ import { generateEffectEvaluations } from '@/ai/flows/generate-effect-evaluation
 import type { GenerateEffectEvaluationsInput, GenerateEffectEvaluationsOutput } from '@/ai/flows/generate-effect-evaluations';
 import { chat } from '@/ai/flows/chat-flow';
 import type { ChatInput } from '@/ai/flows/chat-flow';
-import { redirect } from 'next/navigation';
-import { getAuthAdmin } from '@/firebase/admin';
-import { headers } from 'next/headers';
 
 export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
   try {
@@ -29,19 +26,12 @@ export async function getChatResponse(input: ChatInput): Promise<{ success: bool
     }
 }
 
-export async function createStripeRedirect(plan: 'monthly' | 'yearly'): Promise<{ success: boolean; url?: string; error?: string }> {
-  const sessionCookie = headers().get('cookie')?.split('; ').find(c => c.startsWith('__session='));
-  if (!sessionCookie) {
-    return { success: false, error: 'auth/no-session-cookie' };
+export async function createStripeRedirect(plan: 'monthly' | 'yearly', userId: string): Promise<{ success: boolean; url?: string; error?: string }> {
+  if (!userId) {
+    return { success: false, error: 'auth/no-user-id' };
   }
-
-  const session = sessionCookie.split('=')[1];
-  const authAdmin = getAuthAdmin();
   
   try {
-    const decodedToken = await authAdmin.verifySessionCookie(session, true);
-    const userId = decodedToken.uid;
-
     const monthlyLink = process.env.STRIPE_MONTHLY_PAYMENT_LINK;
     const yearlyLink = process.env.STRIPE_YEARLY_PAYMENT_LINK;
     const paymentLink = plan === 'monthly' ? monthlyLink : yearlyLink;
@@ -55,8 +45,8 @@ export async function createStripeRedirect(plan: 'monthly' | 'yearly'): Promise<
 
     return { success: true, url: urlWithUser.toString() };
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating Stripe redirect:", error);
-    return { success: false, error: 'auth/session-expired' };
+    return { success: false, error: error.message || 'Falha ao criar o redirecionamento para o pagamento.' };
   }
 }
