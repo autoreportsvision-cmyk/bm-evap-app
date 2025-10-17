@@ -1,75 +1,23 @@
 
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Gem, Star, Loader } from 'lucide-react';
-import { useUser } from '@/firebase';
-import { useRouter } from 'next/navigation';
+import { Check, Gem, Star } from 'lucide-react';
 import Link from 'next/link';
-import { useToast } from '@/hooks/use-toast';
+import Script from 'next/script';
+import { useUser } from '@/firebase';
+import { Button } from '@/components/ui/button';
+import StripeBuyButton from '@/components/app/stripe-buy-button'; // Componente novo
 
-// Read environment variables at the component's top level for reliability
-const monthlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK;
-const yearlyPaymentLink = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK;
-
+// Lendo as variáveis de ambiente no topo do componente
+const monthlyBuyButtonId = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_BUY_BUTTON_ID;
+const yearlyBuyButtonId = process.env.NEXT_PUBLIC_STRIPE_YEARLY_BUY_BUTTON_ID;
+const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 
 export default function PricingPage() {
-    const { user, isUserLoading } = useUser();
-    const router = useRouter();
-    const [isLoading, setIsLoading] = useState<string | null>(null);
-    const { toast } = useToast();
-
-    const handleSubscribe = (plan: 'monthly' | 'yearly') => {
-        setIsLoading(plan);
-
-        if (!user) {
-            toast({
-                title: 'Autenticação Necessária',
-                description: 'Você precisa fazer login para comprar um plano.',
-                variant: 'destructive',
-            });
-            router.push('/login?redirect=/pricing');
-            setIsLoading(null);
-            return;
-        }
-
-        let paymentLinkUrl: string | undefined;
-
-        if (plan === 'monthly') {
-            paymentLinkUrl = monthlyPaymentLink;
-        } else {
-            paymentLinkUrl = yearlyPaymentLink;
-        }
-        
-        if (!paymentLinkUrl) {
-             toast({
-                variant: 'destructive',
-                title: 'Erro de Configuração',
-                description: `O link de pagamento para o plano "${plan}" não está configurado nas variáveis de ambiente. Verifique o arquivo .env.`,
-            });
-            setIsLoading(null);
-            return;
-        }
-        
-        let finalUrl = paymentLinkUrl;
-        // Add the user's email as a pre-fill parameter for Stripe and client_reference_id for the webhook
-        const params = new URLSearchParams();
-        if (user.email) {
-            params.set('prefilled_email', user.email);
-        }
-        params.set('client_reference_id', user.uid); // Pass the user ID to the webhook
-
-        if (finalUrl.includes('?')) {
-            finalUrl += `&${params.toString()}`;
-        } else {
-            finalUrl += `?${params.toString()}`;
-        }
-        
-        // Redirect to Stripe
-        window.location.href = finalUrl;
-    };
+    const { user } = useUser();
+    const userEmail = user?.email || undefined;
+    const userId = user?.uid || undefined;
 
     const features = [
         "Acesso a todos os Dashboards.",
@@ -80,82 +28,94 @@ export default function PricingPage() {
     ];
     
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
-            <div className="absolute top-4 left-4">
-                <Link href="/">
-                    <Button variant="outline">Voltar ao Painel</Button>
-                </Link>
-            </div>
-            <div className="w-full max-w-4xl mx-auto">
-                <div className='text-center mb-10'>
-                    <h1 className="text-4xl font-bold">Planos e Preços</h1>
-                    <p className="text-muted-foreground mt-2">Escolha o plano que melhor se adapta às suas necessidades.</p>
+        <>
+            {/* Carrega o script do Stripe Buy Button */}
+            <Script async src="https://js.stripe.com/v3/buy-button.js"></Script>
+            
+            <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+                <div className="absolute top-4 left-4">
+                    <Link href="/">
+                        <Button variant="outline">Voltar ao Painel</Button>
+                    </Link>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Monthly Plan */}
-                    <Card>
-                        <CardHeader className="items-center text-center">
-                            <Star className="h-12 w-12 text-yellow-400" />
-                            <CardTitle className="text-3xl">Plano Mensal</CardTitle>
-                            <CardDescription>Acesso completo por um mês.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="space-y-2 text-center">
-                                <p className="text-4xl font-bold">R$ 12,90</p>
-                                <p className="text-xs text-muted-foreground">Pagamento único. Acesso por 30 dias.</p>
-                            </div>
-                            <ul className="space-y-3 text-sm">
-                                {features.map((feature, index) => (
-                                    <li key={index} className="flex items-center gap-2">
-                                        <Check className="h-4 w-4 text-green-500" />
-                                        <span>{feature}</span>
-                                    </li>
+                <div className="w-full max-w-4xl mx-auto">
+                    <div className='text-center mb-10'>
+                        <h1 className="text-4xl font-bold">Planos e Preços</h1>
+                        <p className="text-muted-foreground mt-2">Escolha o plano que melhor se adapta às suas necessidades.</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {/* Monthly Plan */}
+                        <Card>
+                            <CardHeader className="items-center text-center">
+                                <Star className="h-12 w-12 text-yellow-400" />
+                                <CardTitle className="text-3xl">Plano Mensal</CardTitle>
+                                <CardDescription>Acesso completo por um mês.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="space-y-2 text-center">
+                                    <p className="text-4xl font-bold">R$ 12,90</p>
+                                    <p className="text-xs text-muted-foreground">Pagamento único. Acesso por 30 dias.</p>
+                                </div>
+                                <ul className="space-y-3 text-sm">
+                                    {features.map((feature, index) => (
+                                        <li key={index} className="flex items-center gap-2">
+                                            <Check className="h-4 w-4 text-green-500" />
+                                            <span>{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                            <CardFooter>
+                                {monthlyBuyButtonId && publishableKey ? (
+                                    <StripeBuyButton 
+                                        buy-button-id={monthlyBuyButtonId}
+                                        publishable-key={publishableKey}
+                                        client-reference-id={userId}
+                                        customer-email={userEmail}
+                                    />
+                                ) : (
+                                    <Button className="w-full" disabled>Indisponível</Button>
+                                )}
+                            </CardFooter>
+                        </Card>
 
-                                ))}
-                            </ul>
-                        </CardContent>
-                        <CardFooter>
-                            <Button 
-                                className="w-full" 
-                                onClick={() => handleSubscribe('monthly')} 
-                                disabled={isUserLoading || !!isLoading || !monthlyPaymentLink}>
-                                {isLoading === 'monthly' ? <Loader className="animate-spin" /> : !monthlyPaymentLink ? 'Indisponível' : 'Comprar Acesso Mensal'}
-                            </Button>
-                        </CardFooter>
-                    </Card>
-
-                    {/* Yearly Plan */}
-                    <Card className="border-primary">
-                         <CardHeader className="items-center text-center">
-                            <Gem className="h-12 w-12 text-yellow-500" />
-                            <CardTitle className="text-3xl">Plano Anual</CardTitle>
-                            <CardDescription>O melhor custo-benefício para análise contínua.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="space-y-2 text-center">
-                                <p className="text-4xl font-bold">R$ 39,90</p>
-                                <p className="text-xs text-muted-foreground">Pagamento único. Acesso por 1 ano.</p>
-                            </div>
-                            <ul className="space-y-3 text-sm">
-                                {features.map((feature, index) => (
-                                     <li key={index} className="flex items-center gap-2">
-                                        <Check className="h-4 w-4 text-green-500" />
-                                        <span>{feature}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        </CardContent>
-                        <CardFooter>
-                            <Button 
-                                className="w-full" 
-                                onClick={() => handleSubscribe('yearly')} 
-                                disabled={isUserLoading || !!isLoading || !yearlyPaymentLink}>
-                                 {isLoading === 'yearly' ? <Loader className="animate-spin" /> : !yearlyPaymentLink ? 'Indisponível' : 'Comprar Acesso Anual'}
-                            </Button>
-                        </CardFooter>
-                    </Card>
+                        {/* Yearly Plan */}
+                        <Card className="border-primary">
+                             <CardHeader className="items-center text-center">
+                                <Gem className="h-12 w-12 text-yellow-500" />
+                                <CardTitle className="text-3xl">Plano Anual</CardTitle>
+                                <CardDescription>O melhor custo-benefício para análise contínua.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="space-y-2 text-center">
+                                    <p className="text-4xl font-bold">R$ 39,90</p>
+                                    <p className="text-xs text-muted-foreground">Pagamento único. Acesso por 1 ano.</p>
+                                </div>
+                                <ul className="space-y-3 text-sm">
+                                    {features.map((feature, index) => (
+                                         <li key={index} className="flex items-center gap-2">
+                                            <Check className="h-4 w-4 text-green-500" />
+                                            <span>{feature}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </CardContent>
+                            <CardFooter>
+                               {yearlyBuyButtonId && publishableKey ? (
+                                    <StripeBuyButton
+                                        buy-button-id={yearlyBuyButtonId}
+                                        publishable-key={publishableKey}
+                                        client-reference-id={userId}
+                                        customer-email={userEmail}
+                                    />
+                                ) : (
+                                    <Button className="w-full" disabled>Indisponível</Button>
+                                )}
+                            </CardFooter>
+                        </Card>
+                    </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 }
