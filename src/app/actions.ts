@@ -32,7 +32,6 @@ export async function createStripeRedirect(plan: 'monthly' | 'yearly', userId: s
   }
   
   try {
-    // No servidor, usamos as variáveis de ambiente sem NEXT_PUBLIC_
     const monthlyLink = process.env.STRIPE_MONTHLY_PAYMENT_LINK;
     const yearlyLink = process.env.STRIPE_YEARLY_PAYMENT_LINK;
     const paymentLink = plan === 'monthly' ? monthlyLink : yearlyLink;
@@ -42,23 +41,18 @@ export async function createStripeRedirect(plan: 'monthly' | 'yearly', userId: s
       console.error(errorMessage);
       return { success: false, error: errorMessage };
     }
-
-    // Validação robusta da URL
-    let urlWithUser: URL;
-    try {
-      urlWithUser = new URL(paymentLink);
-      if (urlWithUser.protocol !== 'https:' && urlWithUser.protocol !== 'http:') {
-        throw new Error('Protocolo inválido');
-      }
-    } catch (e) {
-      const errorMessage = `O link de pagamento para o plano "${plan}" ("${paymentLink}") não é uma URL válida. Verifique o arquivo .env.`;
-      console.error(errorMessage);
-      return { success: false, error: errorMessage };
-    }
     
-    urlWithUser.searchParams.append('client_reference_id', userId);
+    // Simplificando para concatenação de string
+    const finalUrl = `${paymentLink}?client_reference_id=${userId}`;
 
-    return { success: true, url: urlWithUser.toString() };
+    // Validação simples para garantir que a URL final pareça correta.
+    if (!finalUrl.startsWith('https://')) {
+        const errorMessage = `O link de pagamento para o plano "${plan}" ("${paymentLink}") não é uma URL HTTPS válida. Verifique o arquivo .env.`;
+        console.error(errorMessage);
+        return { success: false, error: errorMessage };
+    }
+
+    return { success: true, url: finalUrl };
 
   } catch (error: any) {
     console.error("Erro ao criar o redirecionamento para o pagamento:", error);
