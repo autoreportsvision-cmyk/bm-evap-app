@@ -5,15 +5,17 @@ import { stripe } from '@/lib/stripe';
 import { headers } from 'next/headers';
 import { firestoreAdmin } from '@/firebase/admin';
 
-// Seu segredo de webhook do Stripe para testar o endpoint localmente.
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
-    const userId = session.metadata?.userId;
-    const plan = session.metadata?.plan as 'monthly' | 'yearly' | undefined;
+    // client_reference_id is passed from the payment link
+    const userId = session.client_reference_id;
+    // The payment_link object contains the metadata we can use
+    const paymentLink = await stripe.paymentLinks.retrieve(session.payment_link!);
+    const plan = paymentLink.metadata?.plan as 'monthly' | 'yearly' | undefined;
 
     if (!userId || !plan) {
-        console.error('Webhook Error: checkout.session.completed não continha userId ou plan nos metadados.');
+        console.error('Webhook Error: checkout.session.completed não continha client_reference_id ou o link de pagamento não tinha o plano nos metadados.');
         return { success: false, error: 'Metadados ausentes na sessão de checkout.' };
     }
 
@@ -61,14 +63,13 @@ export async function POST(req: NextRequest) {
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
-      // Para pagamentos únicos, o status 'paid' confirma o sucesso.
+      
       if (session.payment_status === 'paid') {
         await grantAccessAfterCheckout(session);
       }
       break;
     }
     default:
-      // Ignora outros eventos para simplificar a lógica.
       console.log(`Evento de webhook não manipulado: ${event.type}`);
   }
 
