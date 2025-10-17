@@ -108,7 +108,7 @@ export default function PricingPage() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="space-y-2 text-center">
-                        <p className="text-4xl font-bold">R$ 9,90</p>
+                        <p className="text-4xl font-bold">R$ 12,90</p>
                         <p className="text-xs text-muted-foreground">Pagamento único. Acesso por 30 dias.</p>
                     </div>
                     <ul className="space-y-3 text-sm">
