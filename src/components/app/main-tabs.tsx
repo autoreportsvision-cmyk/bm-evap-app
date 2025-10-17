@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, LayoutDashboard, Bot, FileSignature, Shield, Lock, Gem } from 'lucide-react';
+import { FileText, LayoutDashboard, Bot, FileSignature, Shield, Lock } from 'lucide-react';
 import FormTab from './form-tab';
 import DashboardTab from './dashboard-tab';
 import SummaryTab from './summary-tab';
@@ -30,22 +30,26 @@ export default function MainTabs() {
 
   const isAdmin = userProfile?.role === 'admin';
   
-  let isPremium = false;
-  if (userProfile) {
-    if (userProfile.role === 'admin') {
-      isPremium = true;
-    } else if (userProfile.role === 'premium' && userProfile.accessExpiration) {
-      // The 'accessExpiration' can be a Firestore Timestamp object or a Date object
-      // depending on whether it comes from the server or was just set on the client.
-      const expirationDate = (userProfile.accessExpiration as any).seconds 
+  const isPremium = useMemoFirebase(() => {
+    if (!userProfile) return false;
+    if (userProfile.role === 'admin') return true;
+
+    if (userProfile.role === 'premium' && userProfile.accessExpiration) {
+      // The accessExpiration could be a Firestore Timestamp object or a JS Date object.
+      // We need to handle both cases to safely get a Date object.
+      const expirationDate = (userProfile.accessExpiration as any).seconds
         ? new Date((userProfile.accessExpiration as any).seconds * 1000)
-        : userProfile.accessExpiration as Date;
-        
-      if (expirationDate > new Date()) {
-        isPremium = true;
+        : userProfile.accessExpiration instanceof Date
+        ? userProfile.accessExpiration
+        : null;
+      
+      // If we have a valid date, check if it's in the future.
+      if (expirationDate) {
+        return expirationDate > new Date();
       }
     }
-  }
+    return false;
+  }, [userProfile]);
 
 
   return (
