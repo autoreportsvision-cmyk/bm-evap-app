@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAppContext } from '@/context/app-context';
-import { Bot, Loader, Share2 } from 'lucide-react';
+import { Bot, Loader } from 'lucide-react';
 import { getAiEvaluations } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import WhatsAppIcon from '@/components/icons/whatsapp-icon';
@@ -18,7 +18,6 @@ import { useDoc } from '@/firebase/firestore/use-doc';
 import { useMemoFirebase } from '@/firebase/provider';
 import { doc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
-
 
 export default function EvaluationsTab() {
   const { calculatedData, aiEvaluations, setAiEvaluations, isCalculated } = useAppContext();
@@ -170,7 +169,6 @@ export default function EvaluationsTab() {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-
     </div>
   );
 }
