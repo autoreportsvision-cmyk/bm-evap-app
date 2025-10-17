@@ -8,7 +8,9 @@ import { getFirestoreAdmin } from '@/firebase/admin';
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
-    const clientReferenceId = session.client_reference_id; // User ID
+    // O client_reference_id é o ID do usuário que passamos no componente do Buy Button
+    const clientReferenceId = session.client_reference_id;
+    // O payment_link é o ID do link de pagamento que foi usado para a compra
     const paymentLinkId = session.payment_link;
 
     if (!clientReferenceId) {
@@ -31,15 +33,15 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
             return { success: false, error: `Usuário não encontrado.` };
         }
         
-        // Determine o plano com base no ID do Payment Link
-        // Os Buy Buttons usam os Payment Links, então podemos comparar os IDs.
-        const monthlyLink = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK;
-        const yearlyLink = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK;
+        // Determinamos o plano com base no ID do Payment Link que vem no evento do webhook.
+        // Comparamos com os IDs que estão no nosso .env.
+        const monthlyLinkId = process.env.STRIPE_MONTHLY_PAYMENT_LINK_ID;
+        const yearlyLinkId = process.env.STRIPE_YEARLY_PAYMENT_LINK_ID;
         
         let plan: 'monthly' | 'yearly' | null = null;
-        if (paymentLinkId === monthlyLink) {
+        if (paymentLinkId === monthlyLinkId) {
             plan = 'monthly';
-        } else if (paymentLinkId === yearlyLink) {
+        } else if (paymentLinkId === yearlyLinkId) {
             plan = 'yearly';
         }
         

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Script from 'next/script';
 import { useUser } from '@/firebase';
 import { Button } from '@/components/ui/button';
-import StripeBuyButton from '@/components/app/stripe-buy-button'; // Componente novo
+import StripeBuyButton from '@/components/app/stripe-buy-button';
 
 // Lendo as variáveis de ambiente no topo do componente
 const monthlyBuyButtonId = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_BUY_BUTTON_ID;
