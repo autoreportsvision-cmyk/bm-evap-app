@@ -51,7 +51,7 @@ export async function createCheckoutSession(
   try {
     session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [
+      line_items: [ // Garante que line_items seja sempre um array
         {
           price: priceId,
           quantity: 1,
@@ -68,15 +68,12 @@ export async function createCheckoutSession(
   } catch (error) {
     console.error('Error in createCheckoutSession:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
-    // Retornamos um objeto de erro para o cliente poder mostrar uma mensagem.
-    // O throw aqui não vai acontecer por causa do redirect, mas é uma boa prática.
     throw new Error(`Falha ao criar sessão de checkout: ${errorMessage}`);
   }
 
   if (session?.url) {
     redirect(session.url);
   } else {
-    // Se a sessão ou a URL não forem criadas, lançamos um erro.
     throw new Error('Could not create Stripe checkout session or URL is missing.');
   }
 }
