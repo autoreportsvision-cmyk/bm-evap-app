@@ -8,6 +8,9 @@ import type { ChatInput } from '@/ai/flows/chat-flow';
 import { stripe } from '@/lib/stripe';
 import Stripe from 'stripe';
 
+// O Next.js carrega automaticamente as variáveis do .env no servidor,
+// então a importação explícita do 'dotenv' não é necessária e pode causar conflitos.
+
 export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
   try {
     const evaluations = await generateEffectEvaluations(input);
@@ -32,6 +35,8 @@ export async function createStripeCheckoutSession(plan: 'monthly' | 'yearly', us
   if (!userId) {
     return { success: false, error: 'auth/no-user-id' };
   }
+  
+  // A verificação agora é feita diretamente no 'process.env' que o Next.js popula.
   if (!process.env.STRIPE_API_KEY) {
      return { success: false, error: 'A chave da API do Stripe não está configurada no servidor.' };
   }
@@ -59,7 +64,6 @@ export async function createStripeCheckoutSession(plan: 'monthly' | 'yearly', us
         },
       ],
       mode: 'payment',
-      // O client_reference_id é a forma legada. Usar metadados é mais flexível.
       metadata: {
         userId: userId,
         plan: plan
