@@ -20,23 +20,28 @@ export default function PricingPage() {
 
     const handleRedirect = (plan: 'monthly' | 'yearly') => {
         setIsRedirecting(plan);
+
         if (!user && !isUserLoading) {
             router.push('/login?redirect=/pricing');
             return;
         }
+        
+        if (user) {
+            const paymentLink = plan === 'monthly' ? monthlyPaymentLink : yearlyPaymentLink;
 
-        const paymentLink = plan === 'monthly' ? monthlyPaymentLink : yearlyPaymentLink;
-
-        if (user && paymentLink) {
-            const urlWithUser = new URL(paymentLink);
-            urlWithUser.searchParams.append('client_reference_id', user.uid);
-            window.location.href = urlWithUser.toString();
-        } else if (!paymentLink) {
-            console.error(`Stripe Payment Link for ${plan} plan is not configured in environment variables.`);
-            alert("A funcionalidade de pagamento não está configurada corretamente.");
-            setIsRedirecting(null);
+            if (paymentLink) {
+                const urlWithUser = new URL(paymentLink);
+                urlWithUser.searchParams.append('client_reference_id', user.uid);
+                // Direct redirection using window.location.href
+                window.location.href = urlWithUser.toString();
+            } else {
+                console.error(`Stripe Payment Link for ${plan} plan is not configured in environment variables.`);
+                alert("A funcionalidade de pagamento não está configurada corretamente.");
+                setIsRedirecting(null);
+            }
         }
-        // If user is loading, the effect below will handle the redirect once the user is available.
+        // If user is loading, the click will set the loading state, and a subsequent click
+        // when the user is loaded will perform the redirect.
     };
 
     const features = [
