@@ -6,7 +6,6 @@ import type { GenerateEffectEvaluationsInput, GenerateEffectEvaluationsOutput } 
 import { chat } from '@/ai/flows/chat-flow';
 import type { ChatInput } from '@/ai/flows/chat-flow';
 import { stripe } from '@/lib/stripe';
-import { auth } from 'firebase-admin';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -50,7 +49,7 @@ export async function createCheckoutSession(
         throw new Error('A URL da aplicação (NEXT_PUBLIC_APP_URL) não está configurada nas variáveis de ambiente.');
     }
     
-    // Para pagamentos únicos, o modo correto é 'payment'.
+    // O modo deve ser 'payment' para pagamentos únicos, que é o que estamos fazendo.
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -59,7 +58,7 @@ export async function createCheckoutSession(
           quantity: 1,
         },
       ],
-      mode: 'payment', // Corrigido para sempre usar 'payment' para pagamentos únicos.
+      mode: 'payment',
       success_url: `${appUrl}/`,
       cancel_url: `${appUrl}/pricing`,
       metadata: {
@@ -74,7 +73,7 @@ export async function createCheckoutSession(
 
     return { success: true, sessionId: session.id };
   } catch (error) {
-    console.error(error);
+    console.error('Error in createCheckoutSession:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
     return { success: false, error: `Falha ao criar sessão de checkout: ${errorMessage}` };
   }
