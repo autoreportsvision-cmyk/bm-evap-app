@@ -8,7 +8,7 @@ import { firestoreAdmin } from '@/firebase/admin';
 // This is your Stripe CLI webhook secret for testing your endpoint locally.
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
-async function updateUserRoleWithExpiration(userId: string, plan: 'monthly' | 'yearly') {
+async function handleSubscription(userId: string, plan: 'monthly' | 'yearly') {
     try {
         const userRef = firestoreAdmin.collection('users').doc(userId);
         
@@ -36,6 +36,49 @@ async function updateUserRoleWithExpiration(userId: string, plan: 'monthly' | 'y
     }
 }
 
+async function handleCheckoutSession(session: Stripe.Checkout.Session) {
+  const userId = session.metadata?.userId;
+  const plan = session.metadata?.plan as 'monthly' | 'yearly' | undefined;
+
+  if (!userId || !plan) {
+    console.error('Webhook received checkout.session.completed without userId or plan in metadata.');
+    return;
+  }
+  
+  // For subscriptions, payment is not 'paid' immediately in checkout.session.completed.
+  // The 'invoice.paid' event is more reliable for subscriptions.
+  // For one-time payments, 'paid' is correct. We handle both for robustness.
+  if (session.mode === 'subscription' || session.payment_status === 'paid') {
+      console.log(`Checkout session for subscription/payment completed for user: ${userId} with plan: ${plan}`);
+      await handleSubscription(userId, plan);
+  } else {
+      console.log(`Checkout session completed for user ${userId}, but payment status is ${session.payment_status}. Waiting for invoice payment.`);
+  }
+}
+
+async function handleInvoicePaid(invoice: Stripe.Invoice) {
+  const subscriptionId = invoice.subscription;
+  if (typeof subscriptionId !== 'string') {
+      console.log('Invoice paid event without a subscription ID.');
+      return;
+  }
+  
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const userId = subscription.metadata?.userId;
+    const plan = subscription.metadata?.plan as 'monthly' | 'yearly' | undefined;
+
+    if (userId && plan) {
+      console.log(`Invoice paid for subscription. Granting access to user: ${userId} for plan: ${plan}`);
+      await handleSubscription(userId, plan);
+    } else {
+      console.error('Invoice paid, but subscription metadata is missing userId or plan.');
+    }
+  } catch (error) {
+      console.error('Error retrieving subscription details from invoice.paid event:', error);
+  }
+}
+
 
 export async function POST(req: NextRequest) {
   const sig = headers().get('stripe-signature')!;
@@ -52,21 +95,17 @@ export async function POST(req: NextRequest) {
   switch (event.type) {
     case 'checkout.session.completed': {
       const session = event.data.object as Stripe.Checkout.Session;
-      
-      if (session.payment_status === 'paid') {
-        const userId = session.metadata?.userId;
-        const plan = session.metadata?.plan as 'monthly' | 'yearly';
-
-        if (userId && plan) {
-          console.log(`Checkout session completed and paid for user: ${userId} with plan: ${plan}`);
-          await updateUserRoleWithExpiration(userId, plan);
-        } else {
-          console.error('Webhook received checkout.session.completed without userId or plan in metadata.');
-        }
-      } else {
-        console.log(`Checkout session completed for user ${session.metadata?.userId}, but payment status is ${session.payment_status}.`);
-      }
+      await handleCheckoutSession(session);
       break;
+    }
+    case 'invoice.paid': {
+        // This event is often more reliable for confirming a subscription has started.
+        const invoice = event.data.object as Stripe.Invoice;
+        // We only care about the first invoice payment of a subscription
+        if (invoice.billing_reason === 'subscription_create') {
+           await handleInvoicePaid(invoice);
+        }
+        break;
     }
     
     default:
