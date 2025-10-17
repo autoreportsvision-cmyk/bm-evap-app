@@ -8,39 +8,37 @@ import { getFirestoreAdmin } from '@/firebase/admin';
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
-    // Para Payment Links, o client_reference_id precisa ser passado na URL.
-    // Como ainda não estamos fazendo isso, vamos extrair o email e procurar o usuário.
-    const customerEmail = session.customer_details?.email;
-    const clientReferenceId = session.client_reference_id; // Pode ser nulo
+    const clientReferenceId = session.client_reference_id; // User ID
     const paymentLinkId = session.payment_link;
 
-    if (!customerEmail) {
-        console.error(`Webhook Error: checkout.session.completed não continha o email do cliente.`);
-        return { success: false, error: 'Email do cliente não encontrado na sessão de checkout.' };
+    if (!clientReferenceId) {
+        console.error(`Webhook Error: checkout.session.completed não continha o client_reference_id (User ID).`);
+        return { success: false, error: 'User ID não encontrado na sessão de checkout.' };
+    }
+
+    if (!paymentLinkId) {
+        console.error(`Webhook Error: checkout.session.completed não continha o payment_link_id.`);
+        return { success: false, error: 'Payment Link ID não encontrado na sessão de checkout.' };
     }
 
     const firestoreAdmin = getFirestoreAdmin();
     try {
-        const usersRef = firestoreAdmin.collection('users');
-        const querySnapshot = await usersRef.where('email', '==', customerEmail).limit(1).get();
+        const userRef = firestoreAdmin.collection('users').doc(clientReferenceId);
+        const userDoc = await userRef.get();
 
-        if (querySnapshot.empty) {
-            console.error(`Webhook Error: Nenhum usuário encontrado com o email: ${customerEmail}`);
+        if (!userDoc.exists) {
+            console.error(`Webhook Error: Nenhum usuário encontrado com o ID: ${clientReferenceId}`);
             return { success: false, error: `Usuário não encontrado.` };
         }
         
-        const userDoc = querySnapshot.docs[0];
-        const userId = userDoc.id;
-        const userRef = userDoc.ref;
-
         // Determine o plano com base no ID do Payment Link
-        const monthlyLink = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK?.split('/').pop();
-        const yearlyLink = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK?.split('/').pop();
+        const monthlyLink = process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PAYMENT_LINK;
+        const yearlyLink = process.env.NEXT_PUBLIC_STRIPE_YEARLY_PAYMENT_LINK;
         
         let plan: 'monthly' | 'yearly' | null = null;
-        if (paymentLinkId?.includes(monthlyLink!)) {
+        if (paymentLinkId === monthlyLink) {
             plan = 'monthly';
-        } else if (paymentLinkId?.includes(yearlyLink!)) {
+        } else if (paymentLinkId === yearlyLink) {
             plan = 'yearly';
         }
         
@@ -63,10 +61,10 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
             accessExpiration: expirationDate,
         });
 
-        console.log(`Acesso premium concedido para o usuário ${userId} com o plano ${plan}. Expira em ${expirationDate.toISOString()}`);
+        console.log(`Acesso premium concedido para o usuário ${clientReferenceId} com o plano ${plan}. Expira em ${expirationDate.toISOString()}`);
         return { success: true };
     } catch (error) {
-        console.error(`Erro ao processar o webhook para ${customerEmail}:`, error);
+        console.error(`Erro ao processar o webhook para o usuário ${clientReferenceId}:`, error);
         return { success: false, error: 'Falha ao processar o webhook e atualizar o usuário.' };
     }
 }

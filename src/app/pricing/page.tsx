@@ -54,14 +54,17 @@ export default function PricingPage() {
         }
         
         let finalUrl = paymentLinkUrl;
-        // Add the user's email as a pre-fill parameter for Stripe
+        // Add the user's email as a pre-fill parameter for Stripe and client_reference_id for the webhook
+        const params = new URLSearchParams();
         if (user.email) {
-            // Check if the URL already has query params
-            if (finalUrl.includes('?')) {
-                finalUrl += `&prefilled_email=${encodeURIComponent(user.email)}`;
-            } else {
-                finalUrl += `?prefilled_email=${encodeURIComponent(user.email)}`;
-            }
+            params.set('prefilled_email', user.email);
+        }
+        params.set('client_reference_id', user.uid); // Pass the user ID to the webhook
+
+        if (finalUrl.includes('?')) {
+            finalUrl += `&${params.toString()}`;
+        } else {
+            finalUrl += `?${params.toString()}`;
         }
         
         // Redirect to Stripe
@@ -107,6 +110,7 @@ export default function PricingPage() {
                                         <Check className="h-4 w-4 text-green-500" />
                                         <span>{feature}</span>
                                     </li>
+
                                 ))}
                             </ul>
                         </CardContent>
@@ -114,8 +118,8 @@ export default function PricingPage() {
                             <Button 
                                 className="w-full" 
                                 onClick={() => handleSubscribe('monthly')} 
-                                disabled={isUserLoading || !!isLoading}>
-                                {isLoading === 'monthly' ? <Loader className="animate-spin" /> : 'Comprar Acesso Mensal'}
+                                disabled={isUserLoading || !!isLoading || !monthlyPaymentLink}>
+                                {isLoading === 'monthly' ? <Loader className="animate-spin" /> : !monthlyPaymentLink ? 'Indisponível' : 'Comprar Acesso Mensal'}
                             </Button>
                         </CardFooter>
                     </Card>
@@ -145,8 +149,8 @@ export default function PricingPage() {
                             <Button 
                                 className="w-full" 
                                 onClick={() => handleSubscribe('yearly')} 
-                                disabled={isUserLoading || !!isLoading}>
-                                 {isLoading === 'yearly' ? <Loader className="animate-spin" /> : 'Comprar Acesso Anual'}
+                                disabled={isUserLoading || !!isLoading || !yearlyPaymentLink}>
+                                 {isLoading === 'yearly' ? <Loader className="animate-spin" /> : !yearlyPaymentLink ? 'Indisponível' : 'Comprar Acesso Anual'}
                             </Button>
                         </CardFooter>
                     </Card>
