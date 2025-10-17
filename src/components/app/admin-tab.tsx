@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
 import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
-import { Loader, Search, MoreHorizontal, ShieldCheck, UserCog } from 'lucide-react';
+import { Loader, Search, MoreHorizontal, ShieldCheck, UserCog, Crown } from 'lucide-react';
 
 export default function AdminTab() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,24 +21,10 @@ export default function AdminTab() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
-      toast({
-        variant: 'destructive',
-        title: 'Busca inválida',
-        description: 'Por favor, insira um nome para buscar.',
-      });
-      return;
-    }
+  const fetchUsers = async (q: any) => {
     setIsLoading(true);
     setSearchResults([]);
     try {
-      const usersRef = collection(firestore, 'users');
-      // Firestore does not support case-insensitive queries directly on the server.
-      // A common workaround is to store a searchable, lowercased version of the name.
-      // For this implementation, we query for names that start with the search query.
-      const q = query(usersRef, where('displayName', '>=', searchQuery), where('displayName', '<=', searchQuery + '\uf8ff'));
       const querySnapshot = await getDocs(q);
       const users: UserProfile[] = [];
       querySnapshot.forEach((doc) => {
@@ -48,7 +34,7 @@ export default function AdminTab() {
       if (users.length === 0) {
         toast({
           title: 'Nenhum resultado',
-          description: 'Nenhum usuário encontrado com esse nome.',
+          description: 'Nenhum usuário encontrado com os critérios fornecidos.',
         });
       }
     } catch (error: any) {
@@ -62,6 +48,28 @@ export default function AdminTab() {
       setIsLoading(false);
     }
   };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Busca inválida',
+        description: 'Por favor, insira um nome para buscar.',
+      });
+      return;
+    }
+    const usersRef = collection(firestore, 'users');
+    const q = query(usersRef, where('displayName', '>=', searchQuery), where('displayName', '<=', searchQuery + '\uf8ff'));
+    fetchUsers(q);
+  };
+  
+  const handleListPremium = async () => {
+    const usersRef = collection(firestore, 'users');
+    const q = query(usersRef, where('role', '==', 'premium'));
+    fetchUsers(q);
+  };
+
 
   const handleRoleChange = async (userId: string, newRole: 'basic' | 'premium') => {
     try {
@@ -91,27 +99,33 @@ export default function AdminTab() {
       <CardHeader>
         <CardTitle>Gerenciamento de Usuários</CardTitle>
         <CardDescription>
-          Busque por um usuário pelo nome e altere sua permissão entre Básico e Premium.
+          Busque por um usuário pelo nome, liste todos os usuários premium ou altere suas permissões.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <form onSubmit={handleSearch} className="flex items-center gap-2">
-          <Label htmlFor="search" className="sr-only">
-            Buscar Usuário
-          </Label>
-          <Input
-            id="search"
-            type="text"
-            placeholder="Digite o nome do usuário..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="flex-grow"
-          />
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? <Loader className="animate-spin" /> : <Search />}
-            <span>Buscar</span>
-          </Button>
-        </form>
+        <div className="flex flex-col sm:flex-row gap-2">
+            <form onSubmit={handleSearch} className="flex items-center gap-2 flex-grow">
+            <Label htmlFor="search" className="sr-only">
+                Buscar Usuário
+            </Label>
+            <Input
+                id="search"
+                type="text"
+                placeholder="Digite o nome do usuário..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-grow"
+            />
+            <Button type="submit" disabled={isLoading}>
+                {isLoading ? <Loader className="animate-spin" /> : <Search />}
+                <span>Buscar</span>
+            </Button>
+            </form>
+            <Button onClick={handleListPremium} disabled={isLoading} variant="outline">
+                {isLoading ? <Loader className="animate-spin" /> : <Crown />}
+                <span>Listar Usuários Premium</span>
+            </Button>
+        </div>
 
         {isLoading && (
           <div className="flex justify-center p-4">
