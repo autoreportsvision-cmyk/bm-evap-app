@@ -74,7 +74,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
         const teaserResult = await getPremiumTeaser({ effectsSummary: results.effectsSummary });
         if (teaserResult.success && teaserResult.data) {
           toast({
-            duration: 10000, // Show for longer
+            duration: 15000, // Show for longer
             title: "💎 Análise Premium Desbloqueada (Prévia)",
             description: teaserResult.data,
             action: (
