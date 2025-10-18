@@ -79,7 +79,7 @@ export default function AdminTab() {
     try {
       const userRef = doc(firestore, 'users', userId);
       
-      let updateData: Partial<UserProfile> = { role: newRole };
+      let updateData: any = { role: newRole };
 
       if (newRole === 'premium' && plan) {
           const expirationDate = new Date();
@@ -89,19 +89,19 @@ export default function AdminTab() {
               expirationDate.setDate(expirationDate.getDate() + 30);
           }
           updateData.accessExpiration = expirationDate;
-          updateData.planType = 'manual'; // Mark as manually granted
+          updateData.planType = plan;
+          updateData.grantedBy = 'admin';
       } else if (newRole === 'basic') {
-          // Explicitly remove planType and accessExpiration when downgrading
           updateData = {
               ...updateData,
-              planType: undefined,
-              accessExpiration: undefined,
+              planType: null,
+              accessExpiration: null,
+              grantedBy: null,
           };
       }
       
       await updateDoc(userRef, updateData);
 
-      // Refresh local state to reflect the change
       setSearchResults(prevResults =>
         prevResults.map(user =>
           user.id === userId ? { ...user, ...updateData } : user
@@ -141,13 +141,21 @@ export default function AdminTab() {
     }
   }
 
-  const getPlanLabel = (planType?: 'monthly' | 'yearly' | 'manual') => {
-    switch(planType) {
-        case 'monthly': return 'Mensal';
-        case 'yearly': return 'Anual';
-        case 'manual': return 'Manual';
-        default: return 'N/D';
+  const getPlanLabel = (user: UserProfile) => {
+    if (user.role !== 'premium') return 'N/A';
+    
+    let label = '';
+    switch(user.planType) {
+        case 'monthly': label = 'Mensal'; break;
+        case 'yearly': label = 'Anual'; break;
+        default: label = 'N/D';
     }
+
+    if (user.grantedBy === 'admin') {
+      return `Manual (${label})`;
+    }
+
+    return label;
   };
 
 
@@ -213,7 +221,7 @@ export default function AdminTab() {
                     </span>
                   </TableCell>
                   <TableCell className="text-center text-xs font-medium">
-                    {getPlanLabel(user.planType)}
+                    {getPlanLabel(user)}
                   </TableCell>
                   <TableCell className="text-center text-xs">
                     {formatDate(user.accessExpiration)}

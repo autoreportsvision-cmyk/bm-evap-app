@@ -111,7 +111,8 @@ export interface UserProfile {
   email: string | null;
   displayName: string | null;
   role: 'admin' | 'basic' | 'premium';
-  planType?: 'monthly' | 'yearly' | 'manual';
+  planType?: 'monthly' | 'yearly';
+  grantedBy?: 'admin';
   createdAt: {
     seconds: number;
     nanoseconds: number;
