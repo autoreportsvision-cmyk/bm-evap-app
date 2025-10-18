@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileText, LayoutDashboard, Bot, FileSignature, Shield, Lock } from 'lucide-react';
 import FormTab from './form-tab';
@@ -31,7 +31,7 @@ export default function MainTabs() {
 
   const isAdmin = userProfile?.role === 'admin';
   
-  const isPremium = useMemoFirebase(() => {
+  const isPremium = useMemo(() => {
     if (!userProfile) return false;
     if (userProfile.role === 'admin') return true;
 

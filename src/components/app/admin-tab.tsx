@@ -79,7 +79,7 @@ export default function AdminTab() {
     try {
       const userRef = doc(firestore, 'users', userId);
       
-      const updateData: { role: 'basic' | 'premium', accessExpiration?: Date, planType?: 'manual' | 'basic' } = { role: newRole };
+      const updateData: { role: 'basic' | 'premium', accessExpiration?: Date, planType?: 'manual' | 'monthly' | 'yearly' } = { role: newRole };
       
       if (newRole === 'premium') {
         const expirationDate = new Date();
@@ -88,8 +88,9 @@ export default function AdminTab() {
         updateData.planType = 'manual';
       } else {
         // Ao rebaixar para 'basic', remove a expiração e o tipo de plano
-        updateData.accessExpiration = undefined;
-        updateData.planType = undefined;
+        const { accessExpiration, planType, ...rest } = (await getDocs(query(collection(firestore, 'users'), where('id', '==', userId)))).docs[0].data();
+        await updateDoc(userRef, { ...rest, role: newRole, accessExpiration: undefined, planType: undefined });
+
       }
       
       await updateDoc(userRef, updateData);
