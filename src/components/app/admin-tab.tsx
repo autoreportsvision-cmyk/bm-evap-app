@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
-import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import type { UserProfile } from '@/lib/types';
 import { Loader, Search, MoreHorizontal, ShieldCheck, UserCog, Crown } from 'lucide-react';
 import { format } from 'date-fns';
@@ -75,34 +75,42 @@ export default function AdminTab() {
   };
 
 
-  const handleRoleChange = async (userId: string, newRole: 'basic' | 'premium') => {
+  const handleRoleChange = async (userId: string, newRole: 'basic' | 'premium', plan?: 'monthly' | 'yearly') => {
     try {
       const userRef = doc(firestore, 'users', userId);
       
-      const updateData: { role: 'basic' | 'premium', accessExpiration?: Date, planType?: 'manual' | 'monthly' | 'yearly' } = { role: newRole };
-      
-      if (newRole === 'premium') {
-        const expirationDate = new Date();
-        expirationDate.setFullYear(expirationDate.getFullYear() + 10); // Concede acesso por 10 anos
-        updateData.accessExpiration = expirationDate;
-        updateData.planType = 'manual';
-      } else {
-        // Ao rebaixar para 'basic', remove a expiração e o tipo de plano
-        const { accessExpiration, planType, ...rest } = (await getDocs(query(collection(firestore, 'users'), where('id', '==', userId)))).docs[0].data();
-        await updateDoc(userRef, { ...rest, role: newRole, accessExpiration: undefined, planType: undefined });
+      let updateData: Partial<UserProfile> = { role: newRole };
 
+      if (newRole === 'premium' && plan) {
+          const expirationDate = new Date();
+          if (plan === 'yearly') {
+              expirationDate.setDate(expirationDate.getDate() + 350);
+          } else { // monthly
+              expirationDate.setDate(expirationDate.getDate() + 30);
+          }
+          updateData.accessExpiration = expirationDate;
+          updateData.planType = 'manual'; // Mark as manually granted
+      } else if (newRole === 'basic') {
+          // Explicitly remove planType and accessExpiration when downgrading
+          updateData = {
+              ...updateData,
+              planType: undefined,
+              accessExpiration: undefined,
+          };
       }
       
       await updateDoc(userRef, updateData);
 
+      // Refresh local state to reflect the change
       setSearchResults(prevResults =>
         prevResults.map(user =>
-          user.id === userId ? { ...user, role: newRole, accessExpiration: updateData.accessExpiration, planType: updateData.planType } : user
+          user.id === userId ? { ...user, ...updateData } : user
         )
       );
+
       toast({
         title: 'Sucesso!',
-        description: `A permissão do usuário foi alterada para ${newRole}.`,
+        description: `A permissão do usuário foi alterada.`,
       });
     } catch (error: any) {
       console.error('Erro ao alterar permissão:', error);
@@ -228,8 +236,11 @@ export default function AdminTab() {
                             <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'basic')}>
                               Tornar Básico
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'premium')}>
-                              Tornar Premium
+                            <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'premium', 'monthly')}>
+                              Conceder Premium (Mensal)
+                            </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'premium', 'yearly')}>
+                              Conceder Premium (Anual)
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
