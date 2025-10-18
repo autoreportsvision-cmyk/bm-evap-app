@@ -36,23 +36,25 @@ export default function MainTabs() {
     if (userProfile.role === 'admin') return true;
 
     if (userProfile.role === 'premium') {
-      // Se não houver data de expiração, o acesso é permanente (concedido manualmente).
+      // Se não houver data de expiração, consideramos o acesso válido (pode ser um acesso manual vitalício).
       if (!userProfile.accessExpiration) {
         return true;
       }
       
-      // Se houver data de expiração, verifique se ainda não expirou.
+      // Converte o objeto Timestamp do Firestore ou a data do JS para um objeto Date
       const expirationDate = (userProfile.accessExpiration as any).seconds
         ? new Date((userProfile.accessExpiration as any).seconds * 1000)
         : userProfile.accessExpiration instanceof Date
         ? userProfile.accessExpiration
         : null;
       
+      // Se a data de expiração for válida, verifica se ela é futura
       if (expirationDate) {
         return expirationDate > new Date();
       }
     }
     
+    // Se não for admin ou premium com acesso válido, retorna false.
     return false;
   }, [userProfile]);
 

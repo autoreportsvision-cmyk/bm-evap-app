@@ -111,11 +111,12 @@ export interface UserProfile {
   email: string | null;
   displayName: string | null;
   role: 'admin' | 'basic' | 'premium';
+  planType?: 'monthly' | 'yearly' | 'manual';
   createdAt: {
     seconds: number;
     nanoseconds: number;
   };
-  accessExpiration?: { // Added optional accessExpiration field
+  accessExpiration?: {
     seconds: number;
     nanoseconds: number;
   } | Date;

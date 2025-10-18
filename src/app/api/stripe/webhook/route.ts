@@ -9,8 +9,6 @@ const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
     const clientReferenceId = session.client_reference_id;
-    // CORREÇÃO CRÍTICA: A propriedade correta que contém o ID do link de pagamento é `payment_link`.
-    // O valor é uma string contendo o ID, e não um objeto.
     const paymentLinkId = session.payment_link;
 
     if (!clientReferenceId) {
@@ -36,16 +34,15 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
         const monthlyPaymentLinkIdEnv = process.env.STRIPE_MONTHLY_PAYMENT_LINK_ID;
         const yearlyPaymentLinkIdEnv = process.env.STRIPE_YEARLY_PAYMENT_LINK_ID;
         
-        let plan: 'monthly' | 'yearly' | null = null;
+        let planType: 'monthly' | 'yearly' | null = null;
         
-        // CORREÇÃO: Comparando o `paymentLinkId` (string) com as variáveis de ambiente.
         if (paymentLinkId === monthlyPaymentLinkIdEnv) {
-            plan = 'monthly';
+            planType = 'monthly';
         } else if (paymentLinkId === yearlyPaymentLinkIdEnv) {
-            plan = 'yearly';
+            planType = 'yearly';
         }
         
-        if (!plan) {
+        if (!planType) {
             console.error(`Webhook Error: O payment_link_id "${paymentLinkId}" não corresponde a nenhum plano configurado. Verifique as variáveis de ambiente STRIPE_MONTHLY_PAYMENT_LINK_ID e STRIPE_YEARLY_PAYMENT_LINK_ID.`);
             return { success: false, error: `O ID do link de pagamento recebido ("${paymentLinkId}") não corresponde a nenhum plano configurado.`, status: 400 };
         }
@@ -53,18 +50,19 @@ async function grantAccessAfterCheckout(session: Stripe.Checkout.Session) {
         const now = new Date();
         const expirationDate = new Date(now);
 
-        if (plan === 'yearly') {
-          expirationDate.setFullYear(now.getFullYear() + 1);
+        if (planType === 'yearly') {
+          expirationDate.setDate(now.getDate() + 350);
         } else { // monthly
-          expirationDate.setMonth(now.getMonth() + 1);
+          expirationDate.setDate(now.getDate() + 30);
         }
 
         await userRef.update({ 
             role: 'premium',
             accessExpiration: expirationDate,
+            planType: planType, // Salva o tipo do plano
         });
 
-        console.log(`Sucesso: Acesso Premium concedido ao usuário ${clientReferenceId} até ${expirationDate.toISOString()}`);
+        console.log(`Sucesso: Acesso Premium (${planType}) concedido ao usuário ${clientReferenceId} até ${expirationDate.toISOString()}`);
         return { success: true, status: 200 };
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido no servidor.';

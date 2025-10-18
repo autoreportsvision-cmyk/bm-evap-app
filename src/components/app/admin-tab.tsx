@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -78,19 +79,24 @@ export default function AdminTab() {
     try {
       const userRef = doc(firestore, 'users', userId);
       
-      const updateData: {role: 'basic' | 'premium', accessExpiration?: Date} = { role: newRole };
+      const updateData: { role: 'basic' | 'premium', accessExpiration?: Date, planType?: 'manual' | 'basic' } = { role: newRole };
       
       if (newRole === 'premium') {
         const expirationDate = new Date();
         expirationDate.setFullYear(expirationDate.getFullYear() + 10); // Concede acesso por 10 anos
         updateData.accessExpiration = expirationDate;
+        updateData.planType = 'manual';
+      } else {
+        // Ao rebaixar para 'basic', remove a expiração e o tipo de plano
+        updateData.accessExpiration = undefined;
+        updateData.planType = undefined;
       }
       
       await updateDoc(userRef, updateData);
 
       setSearchResults(prevResults =>
         prevResults.map(user =>
-          user.id === userId ? { ...user, role: newRole, accessExpiration: updateData.accessExpiration } : user
+          user.id === userId ? { ...user, role: newRole, accessExpiration: updateData.accessExpiration, planType: updateData.planType } : user
         )
       );
       toast({
@@ -125,6 +131,16 @@ export default function AdminTab() {
       return 'Data inválida';
     }
   }
+
+  const getPlanLabel = (planType?: 'monthly' | 'yearly' | 'manual') => {
+    switch(planType) {
+        case 'monthly': return 'Mensal';
+        case 'yearly': return 'Anual';
+        case 'manual': return 'Manual';
+        default: return 'N/D';
+    }
+  };
+
 
   return (
     <Card>
@@ -172,6 +188,7 @@ export default function AdminTab() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead className="text-center">Permissão</TableHead>
+                <TableHead className="text-center">Plano</TableHead>
                 <TableHead className="text-center">Acesso Expira em</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -185,6 +202,9 @@ export default function AdminTab() {
                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${user.role === 'admin' ? 'bg-red-500 text-white' : user.role === 'premium' ? 'bg-yellow-500 text-black' : 'bg-gray-500 text-white'}`}>
                         {user.role}
                     </span>
+                  </TableCell>
+                  <TableCell className="text-center text-xs font-medium">
+                    {getPlanLabel(user.planType)}
                   </TableCell>
                   <TableCell className="text-center text-xs">
                     {formatDate(user.accessExpiration)}
