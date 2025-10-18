@@ -4,19 +4,24 @@
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Calculator } from 'lucide-react';
+import { Calculator, Gem } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { useAppContext } from '@/context/app-context';
-import { EvaporationData, formSchema } from '@/lib/types';
+import { EvaporationData, formSchema, UserProfile } from '@/lib/types';
 import { performCalculations } from '@/lib/calculations';
 import { useToast } from '@/hooks/use-toast';
+import { getPremiumTeaser } from '@/app/actions';
+import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { useDoc } from '@/firebase/firestore/use-doc';
 
 type FormTabProps = {
   onCalculate: () => void;
@@ -26,6 +31,16 @@ type FormTabProps = {
 export default function FormTab({ onCalculate }: FormTabProps) {
   const { formData, setFormData, setCalculatedData, setIsCalculated } = useAppContext();
   const { toast } = useToast();
+  const router = useRouter();
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [user, firestore]);
+
+  const { data: userProfile } = useDoc<UserProfile>(userProfileRef);
 
   const form = useForm<EvaporationData>({
     resolver: zodResolver(formSchema),
@@ -33,7 +48,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
     mode: 'onBlur',
   });
 
-  const { control, handleSubmit, reset, formState: { errors }, watch, setValue } = form;
+  const { control, handleSubmit, reset, formState: { errors }, watch } = form;
 
   const numberOfEffects = watch('numberOfEffects');
 
@@ -42,7 +57,7 @@ export default function FormTab({ onCalculate }: FormTabProps) {
   }, [formData, reset]);
 
   
-  const onSubmit = (data: EvaporationData) => {
+  const onSubmit = async (data: EvaporationData) => {
     try {
       setFormData(data);
       const results = performCalculations(data);
@@ -53,6 +68,25 @@ export default function FormTab({ onCalculate }: FormTabProps) {
         title: "Sucesso!",
         description: "Cálculos realizados. Verifique a aba Dashboard.",
       });
+
+      // Se for usuário básico, gera e mostra o teaser.
+      if (userProfile?.role === 'basic') {
+        const teaserResult = await getPremiumTeaser({ effectsSummary: results.effectsSummary });
+        if (teaserResult.success && teaserResult.data) {
+          toast({
+            duration: 10000, // Show for longer
+            title: "💎 Análise Premium Desbloqueada (Prévia)",
+            description: teaserResult.data,
+            action: (
+              <Button variant="secondary" size="sm" onClick={() => router.push('/pricing')}>
+                <Gem className="mr-2 h-4 w-4" />
+                Ver Planos
+              </Button>
+            ),
+          });
+        }
+      }
+
     } catch(e) {
       console.error(e);
       toast({

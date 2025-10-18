@@ -5,6 +5,8 @@ import { generateEffectEvaluations } from '@/ai/flows/generate-effect-evaluation
 import type { GenerateEffectEvaluationsInput, GenerateEffectEvaluationsOutput } from '@/ai/flows/generate-effect-evaluations';
 import { chat } from '@/ai/flows/chat-flow';
 import type { ChatInput } from '@/ai/flows/chat-flow';
+import { generatePremiumTeaser } from '@/ai/flows/generate-premium-teaser';
+import type { GeneratePremiumTeaserInput } from '@/ai/flows/generate-premium-teaser';
 
 
 export async function getAiEvaluations(input: GenerateEffectEvaluationsInput): Promise<{ success: boolean; data?: GenerateEffectEvaluationsOutput; error?: string }> {
@@ -27,4 +29,16 @@ export async function getChatResponse(input: ChatInput): Promise<{ success: bool
         const errorMessage = error.message || 'Falha ao obter resposta do chat.';
         return { success: false, error: errorMessage };
     }
+}
+
+
+export async function getPremiumTeaser(input: GeneratePremiumTeaserInput): Promise<{ success: boolean; data?: string; error?: string; }> {
+  try {
+    const teaser = await generatePremiumTeaser(input);
+    return { success: true, data: teaser };
+  } catch (error: any) {
+    // Don't log to console, this is an optional feature
+    const errorMessage = error.message || 'Falha ao gerar o teaser.';
+    return { success: false, error: errorMessage };
+  }
 }
