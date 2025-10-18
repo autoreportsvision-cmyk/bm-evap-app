@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -22,6 +22,8 @@ import { getPremiumTeaser } from '@/app/actions';
 import { useUser, useFirestore, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { useDoc } from '@/firebase/firestore/use-doc';
+import UsersIcon from '../icons/users-icon';
+import Link from 'next/link';
 
 type FormTabProps = {
   onCalculate: () => void;
@@ -249,6 +251,15 @@ export default function FormTab({ onCalculate }: FormTabProps) {
 
         </form>
       </CardContent>
+       <CardFooter className="flex-col gap-2 text-center border-t pt-6">
+         <p className="text-xs text-muted-foreground">Participe da nossa comunidade de profissionais da evaporação no WhatsApp!</p>
+         <Link href="https://chat.whatsapp.com/CkILL21UzWMGuCk5W0PLIg?mode=wwc" target="_blank" rel="noopener noreferrer">
+            <Button variant="outline">
+                <UsersIcon className="h-5 w-5" />
+                Entrar no Grupo
+            </Button>
+         </Link>
+      </CardFooter>
     </Card>
   );
 }
