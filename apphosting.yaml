@@ -8,12 +8,3 @@ buildConfig:
 # Specifies the command to run your application
 runConfig:
   command: npm run start
-  cpu: 0.5 # Allocate more CPU for the build process
-  minInstances: 0
-  maxInstances: 2
-
-# Backend API is publicly available.
-# To secure your backend, configure Ingress Controls.
-# https://firebase.google.com/docs/app-hosting/configure-ingress-controls
-# ingress:
-#   internal: true
