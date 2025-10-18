@@ -1,6 +1,12 @@
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
+# Explicitly tell App Hosting to use the Node.js buildpack.
+# This is a workaround for the "No buildpack groups passed detection" error.
+buildConfig:
+  buildpacks:
+    - code-builder/node18-builder
+
 runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
