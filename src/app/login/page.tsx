@@ -231,7 +231,7 @@ export default function LoginPage() {
           </CardContent>
           <Separator className='my-4' />
            <CardFooter className="flex-col gap-2 text-center">
-             <p className="text-xs text-muted-foreground">Participe da nossa comunidade de especialistas em evaporação no WhatsApp!</p>
+             <p className="text-xs text-muted-foreground">Participe da nossa comunidade de profissionais da evaporação no WhatsApp!</p>
              <a href="https://chat.whatsapp.com/CkILL21UzWMGuCk5W0PLIg?mode=wwc" target="_blank" rel="noopener noreferrer">
                 <Button variant="outline">
                     <UsersIcon className="h-5 w-5" />

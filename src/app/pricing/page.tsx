@@ -130,7 +130,7 @@ export default function PricingPage() {
                             </a>
                         </div>
                         <div>
-                            <p className="text-muted-foreground">Junte-se à nossa comunidade de especialistas no WhatsApp.</p>
+                            <p className="text-muted-foreground">Junte-se à nossa comunidade de profissionais da evaporação no WhatsApp.</p>
                              <a href="https://chat.whatsapp.com/CkILL21UzWMGuCk5W0PLIg?mode=wwc" target="_blank" rel="noopener noreferrer">
                                 <Button variant="outline" className="mt-2">
                                     <UsersIcon className="h-5 w-5" />
