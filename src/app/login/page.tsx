@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useFirestore } from '@/firebase';
@@ -27,6 +27,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import UsersIcon from '@/components/icons/users-icon';
+import { Separator } from '@/components/ui/separator';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -227,6 +229,16 @@ export default function LoginPage() {
               </button>
             </div>
           </CardContent>
+          <Separator className='my-4' />
+           <CardFooter className="flex-col gap-2 text-center">
+             <p className="text-xs text-muted-foreground">Participe da nossa comunidade de especialistas em evaporação no WhatsApp!</p>
+             <a href="https://chat.whatsapp.com/CkILL21UzWMGuCk5W0PLIg?mode=wwc" target="_blank" rel="noopener noreferrer">
+                <Button variant="outline">
+                    <UsersIcon className="h-5 w-5" />
+                    Entrar no Grupo
+                </Button>
+             </a>
+          </CardFooter>
         </Card>
       </div>
 
@@ -257,5 +269,3 @@ export default function LoginPage() {
     </>
   );
 }
-
-    
