@@ -1,7 +1,19 @@
 # Settings to manage and configure a Firebase App Hosting backend.
 # https://firebase.google.com/docs/app-hosting/configure
 
+# Specifies the command to build your application
+buildConfig:
+  buildCommand: npm run build
+
+# Specifies the command to run your application
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
+  command: npm run start
+  cpu: 0.5 # Allocate more CPU for the build process
+  minInstances: 0
   maxInstances: 2
+
+# Backend API is publicly available.
+# To secure your backend, configure Ingress Controls.
+# https://firebase.google.com/docs/app-hosting/configure-ingress-controls
+# ingress:
+#   internal: true
